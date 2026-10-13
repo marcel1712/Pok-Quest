@@ -44,6 +44,7 @@ function makeBattle(overrides: Partial<Battle> = {}): Battle {
     result: 'victory',
     team_multiplier_applied: 1,
     wild_species_pokedex_number: null,
+    campaign_node_id: null,
     created_at: new Date().toISOString(),
     resolved_at: new Date().toISOString(),
     ...overrides,

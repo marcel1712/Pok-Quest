@@ -48,6 +48,11 @@ export const queryKeys = {
     all: ['ownedPokemon'] as const,
     list: () => ['ownedPokemon', 'list'] as const,
   },
+  campaign: {
+    all: ['campaign'] as const,
+    content: () => ['campaign', 'content'] as const,
+    progress: () => ['campaign', 'progress'] as const,
+  },
   captures: {
     all: ['captures'] as const,
     forBattle: (battleId: string) => ['captures', 'forBattle', battleId] as const,

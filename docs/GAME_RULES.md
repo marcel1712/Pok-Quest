@@ -156,6 +156,18 @@ applyDailyTaskDiminishingReturns(baseXp, tarefasRecompensadasHoje):
 
 Nenhum desses fica parado no nível inicial, e 90 dias de uso real não chega nem perto do teto (100) — nem precisa, porque o jogo não tem "fim" definido ainda (Fase 5+). Um dia sem nenhuma atividade soma 0 XP, nunca negativo — sem penalidade por ausência (CA do T-027).
 
+## Campanha (T-028)
+
+A campanha é uma lista ordenada de **nós** (cidade/história, rota, rival, ginásio). Cada nó define um encontro (tipo + dificuldade), quantas vitórias são necessárias para concluí-lo, se pode ser repetido depois de concluído e de quais nós depende. O motor de batalha não conhece a campanha: o nó apenas indica contra qual encontro a batalha acontece.
+
+- **Desbloqueio:** um nó fica disponível quando todos os seus pré-requisitos estão concluídos.
+- **Próximo encontro:** o primeiro nó disponível na ordem da história; quando não há mais nenhum, a última rota repetível.
+- **Progresso:** só uma vitória conta. Retirada não soma nem subtrai nada, e nenhum progresso regride por inatividade.
+- **Repetição:** apenas rotas são repetíveis. Rival, ginásio e marcos de história não aceitam nova batalha depois de concluídos.
+- **Compromisso mínimo:** o compromisso declarado não pode ser menor que a dificuldade efetiva do nó (mesma redução por time descrita acima).
+
+Tudo isso é aplicado no banco (`enforce_campaign_node_on_battle` e `record_campaign_progress_on_battle_resolved`). O conteúdo atual está em `src/features/journey/content/sinnoh.ts`.
+
 ## O que fica fora do T-021
 
 - Não existe ainda `battles`/`battle_commitments` persistidos (essa é uma decisão explícita do T-016: Pomodoro funciona sem a camada de RPG). O motor é só funções puras em memória por enquanto.

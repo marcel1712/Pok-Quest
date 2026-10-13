@@ -17,6 +17,7 @@ export async function createBattle(ownerId: string, input: CreateBattleInput): P
           commitment_type: 'task',
           commitment_min_difficulty: input.minDifficulty,
           task_id: input.taskId,
+          campaign_node_id: input.campaignNodeId,
         }
       : {
           owner_id: ownerId,
@@ -25,6 +26,7 @@ export async function createBattle(ownerId: string, input: CreateBattleInput): P
           commitment_type: 'focusSession',
           commitment_min_duration_minutes: input.minDurationMinutes,
           focus_session_id: input.focusSessionId,
+          campaign_node_id: input.campaignNodeId,
         }
 
   const { data, error } = await supabase.from('battles').insert(insert).select('*').single()

@@ -12,6 +12,7 @@ describe('createBattleInputSchema', () => {
       encounterDifficulty: 1,
       minDifficulty: 1,
       taskId,
+      campaignNodeId: 'sinnoh.route-201',
     })
     expect(result.commitmentType).toBe('task')
   })
@@ -23,6 +24,7 @@ describe('createBattleInputSchema', () => {
       encounterDifficulty: 5,
       minDurationMinutes: 75,
       focusSessionId,
+      campaignNodeId: 'sinnoh.route-201',
     })
     expect(result.commitmentType).toBe('focusSession')
   })
@@ -38,6 +40,18 @@ describe('createBattleInputSchema', () => {
     ).toThrow()
   })
 
+  it('rejects a commitment without a campaign node', () => {
+    expect(() =>
+      createBattleInputSchema.parse({
+        commitmentType: 'task',
+        encounterKind: 'wild',
+        encounterDifficulty: 1,
+        minDifficulty: 1,
+        taskId,
+      }),
+    ).toThrow()
+  })
+
   it('rejects an out-of-range difficulty', () => {
     expect(() =>
       createBattleInputSchema.parse({
@@ -46,6 +60,7 @@ describe('createBattleInputSchema', () => {
         encounterDifficulty: 6,
         minDifficulty: 1,
         taskId,
+        campaignNodeId: 'sinnoh.route-201',
       }),
     ).toThrow()
   })
@@ -58,6 +73,7 @@ describe('createBattleInputSchema', () => {
         encounterDifficulty: 1,
         minDifficulty: 1,
         taskId,
+        campaignNodeId: 'sinnoh.route-201',
       }),
     ).toThrow()
   })
@@ -70,6 +86,7 @@ describe('createBattleInputSchema', () => {
         encounterDifficulty: 1,
         minDurationMinutes: 121,
         focusSessionId,
+        campaignNodeId: 'sinnoh.route-201',
       }),
     ).toThrow()
   })

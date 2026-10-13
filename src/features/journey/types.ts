@@ -1,0 +1,18 @@
+import type { Tables } from '@/shared/types/database'
+
+export type CampaignNode = Tables<'campaign_nodes'>
+export type CampaignNodePrerequisite = Tables<'campaign_node_prerequisites'>
+export type CampaignNodeProgress = Tables<'campaign_node_progress'>
+
+export type CampaignContent = {
+  nodes: CampaignNode[]
+  prerequisites: CampaignNodePrerequisite[]
+}
+
+export type JourneyNodeStatus = 'locked' | 'available' | 'completed'
+
+export type JourneyNode = {
+  node: CampaignNode
+  status: JourneyNodeStatus
+  victories: number
+}

@@ -35,6 +35,7 @@ export type Database = {
     Tables: {
       battles: {
         Row: {
+          campaign_node_id: string | null
           commitment_min_difficulty: number | null
           commitment_min_duration_minutes: number | null
           commitment_type: string
@@ -52,6 +53,7 @@ export type Database = {
           wild_species_pokedex_number: number | null
         }
         Insert: {
+          campaign_node_id?: string | null
           commitment_min_difficulty?: number | null
           commitment_min_duration_minutes?: number | null
           commitment_type: string
@@ -69,6 +71,7 @@ export type Database = {
           wild_species_pokedex_number?: number | null
         }
         Update: {
+          campaign_node_id?: string | null
           commitment_min_difficulty?: number | null
           commitment_min_duration_minutes?: number | null
           commitment_type?: string
@@ -86,6 +89,13 @@ export type Database = {
           wild_species_pokedex_number?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'battles_campaign_node_id_fkey'
+            columns: ['campaign_node_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'battles_focus_session_id_fkey'
             columns: ['focus_session_id']
@@ -108,6 +118,136 @@ export type Database = {
             referencedColumns: ['pokedex_number']
           },
         ]
+      }
+      campaign_node_prerequisites: {
+        Row: {
+          node_id: string
+          requires_node_id: string
+        }
+        Insert: {
+          node_id: string
+          requires_node_id: string
+        }
+        Update: {
+          node_id?: string
+          requires_node_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_node_prerequisites_node_id_fkey'
+            columns: ['node_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'campaign_node_prerequisites_requires_node_id_fkey'
+            columns: ['requires_node_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      campaign_node_progress: {
+        Row: {
+          completed_at: string | null
+          node_id: string
+          owner_id: string
+          victories: number
+        }
+        Insert: {
+          completed_at?: string | null
+          node_id: string
+          owner_id: string
+          victories?: number
+        }
+        Update: {
+          completed_at?: string | null
+          node_id?: string
+          owner_id?: string
+          victories?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_node_progress_node_id_fkey'
+            columns: ['node_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      campaign_nodes: {
+        Row: {
+          encounter_difficulty: number
+          encounter_kind: string
+          id: string
+          kind: string
+          npc_name: string | null
+          region_id: string
+          repeatable: boolean
+          required_victories: number
+          sort_order: number
+          summary: string
+          title: string
+        }
+        Insert: {
+          encounter_difficulty: number
+          encounter_kind: string
+          id: string
+          kind: string
+          npc_name?: string | null
+          region_id: string
+          repeatable?: boolean
+          required_victories: number
+          sort_order: number
+          summary: string
+          title: string
+        }
+        Update: {
+          encounter_difficulty?: number
+          encounter_kind?: string
+          id?: string
+          kind?: string
+          npc_name?: string | null
+          region_id?: string
+          repeatable?: boolean
+          required_victories?: number
+          sort_order?: number
+          summary?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_nodes_region_id_fkey'
+            columns: ['region_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_regions'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      campaign_regions: {
+        Row: {
+          content_version: number
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          content_version?: number
+          id: string
+          name: string
+          sort_order: number
+        }
+        Update: {
+          content_version?: number
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       captures: {
         Row: {

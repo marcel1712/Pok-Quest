@@ -4,12 +4,15 @@ import type { Commitment, Encounter, PartySnapshot } from '../types'
 
 export function EncounterCard({
   encounter,
+  locationName,
   party,
   commitmentType,
   onAccept,
   onSkip,
 }: {
   encounter: Encounter
+  /** Where in the campaign this encounter happens, e.g. "Rota 201". */
+  locationName?: string
   party: PartySnapshot
   /** Only the commitment of this type is offered — the caller already knows which
    * activity (task or focus session) this card is being shown for. */
@@ -27,6 +30,7 @@ export function EncounterCard({
           {glyph}
         </span>
         <div>
+          {locationName && <p className="text-xs text-slate-400">{locationName}</p>}
           <p className="font-semibold text-slate-100">{label}</p>
           <p className="text-sm text-slate-400">
             Dificuldade {encounter.difficulty}/5 · {'●'.repeat(encounter.difficulty)}

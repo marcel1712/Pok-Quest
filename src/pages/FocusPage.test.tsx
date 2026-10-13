@@ -10,6 +10,10 @@ import {
   startSession,
   transitionSession,
 } from '@/features/focus/api/focus-sessions-repository'
+import {
+  getCampaignContent,
+  listCampaignProgress,
+} from '@/features/journey/api/campaign-repository'
 import { listRewardEvents } from '@/features/rewards/api/reward-events-repository'
 import { getProfile, updateFocusPreferences } from '@/features/settings/api/profile-repository'
 import { getTaskById, listTasks } from '@/features/tasks/api/tasks-repository'
@@ -17,8 +21,9 @@ import type { Battle } from '@/features/battles/types'
 import type { FocusSession } from '@/features/focus/types'
 import { FocusPage } from './FocusPage'
 
-vi.mock('@/features/battles/encounter-generator', () => ({
-  generateRandomEncounter: () => ({ kind: 'wild', difficulty: 1 }),
+vi.mock('@/features/journey/api/campaign-repository', () => ({
+  getCampaignContent: vi.fn(),
+  listCampaignProgress: vi.fn(),
 }))
 
 vi.mock('@/features/battles/api/battles-repository', () => ({
@@ -52,6 +57,27 @@ vi.mock('@/features/tasks/api/tasks-repository', () => ({
 const createBattleMock = vi.mocked(createBattle)
 const getBattleForFocusSessionMock = vi.mocked(getBattleForFocusSession)
 const listRewardEventsMock = vi.mocked(listRewardEvents)
+const getCampaignContentMock = vi.mocked(getCampaignContent)
+const listCampaignProgressMock = vi.mocked(listCampaignProgress)
+
+const campaignContent = {
+  nodes: [
+    {
+      id: 'sinnoh.route-201',
+      region_id: 'sinnoh',
+      sort_order: 1,
+      kind: 'route',
+      title: 'Rota 201',
+      summary: 'Grama alta.',
+      npc_name: null,
+      encounter_kind: 'wild',
+      encounter_difficulty: 1,
+      required_victories: 3,
+      repeatable: true,
+    },
+  ],
+  prerequisites: [],
+}
 const getActiveSessionMock = vi.mocked(getActiveSession)
 const startSessionMock = vi.mocked(startSession)
 const transitionSessionMock = vi.mocked(transitionSession)
@@ -93,6 +119,7 @@ function makeBattle(overrides: Partial<Battle> = {}): Battle {
     result: null,
     team_multiplier_applied: null,
     wild_species_pokedex_number: null,
+    campaign_node_id: 'sinnoh.route-201',
     created_at: new Date().toISOString(),
     resolved_at: null,
     ...overrides,
@@ -123,6 +150,8 @@ beforeEach(() => {
   createBattleMock.mockReset()
   getBattleForFocusSessionMock.mockReset().mockResolvedValue(null)
   listRewardEventsMock.mockReset().mockResolvedValue([])
+  getCampaignContentMock.mockReset().mockResolvedValue(campaignContent)
+  listCampaignProgressMock.mockReset().mockResolvedValue([])
   getActiveSessionMock.mockReset()
   startSessionMock.mockReset()
   transitionSessionMock.mockReset()
@@ -145,6 +174,7 @@ describe('FocusPage — encounter before starting', () => {
     renderPage()
 
     expect(await screen.findByText('Pokémon selvagem')).toBeInTheDocument()
+    expect(screen.getByText('Rota 201')).toBeInTheDocument()
     expect(
       screen.getByText('sessão de foco de pelo menos 1 min', { exact: false }),
     ).toBeInTheDocument()
@@ -170,9 +200,19 @@ describe('FocusPage — encounter before starting', () => {
           commitmentType: 'focusSession',
           minDurationMinutes: 1,
           focusSessionId: 'session-1',
+          campaignNodeId: 'sinnoh.route-201',
         }),
       ),
     )
+  })
+
+  it('falls back to the plain start form when the campaign cannot be loaded', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    getCampaignContentMock.mockRejectedValue({ code: '42501', message: 'denied' })
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Iniciar foco' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aceitar encontro' })).not.toBeInTheDocument()
   })
 
   it('skipping the encounter falls back to the plain start form, with no battle created', async () => {

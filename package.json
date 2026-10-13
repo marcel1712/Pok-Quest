@@ -16,7 +16,8 @@
     "preview": "vite preview",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked > src/shared/types/database.ts",
-    "catalog:import": "tsx scripts/import-species-catalog.ts"
+    "catalog:import": "tsx scripts/import-species-catalog.ts",
+    "campaign:seed": "tsx scripts/generate-campaign-seed.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

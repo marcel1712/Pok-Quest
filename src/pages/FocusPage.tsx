@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { BattleResultSection } from '@/features/battles/components/BattleResultSection'
 import { EncounterCard } from '@/features/battles/components/EncounterCard'
-import { generateRandomEncounter } from '@/features/battles/encounter-generator'
 import { useCreateBattle } from '@/features/battles/hooks/use-create-battle'
 import { useBattleForFocusSession } from '@/features/battles/hooks/use-battle'
 import { ENCOUNTER_LABELS } from '@/features/battles/labels'
@@ -16,6 +15,7 @@ import { useActiveFocusSession } from '@/features/focus/hooks/use-active-focus-s
 import { useCompletionChime } from '@/features/focus/hooks/use-completion-chime'
 import { useStartFocusSession } from '@/features/focus/hooks/use-focus-session-mutations'
 import { useSessionClock } from '@/features/focus/hooks/use-session-clock'
+import { useJourney } from '@/features/journey/hooks/use-journey'
 import {
   useFocusPreferences,
   useUpdateFocusPreferences,
@@ -29,7 +29,8 @@ type RestState =
   | { phase: 'prompt' }
   | { phase: 'resting'; minutes: number }
 
-// No party system yet (T-024/T-025) — always neutral, matching docs/GAME_RULES.md.
+// The party's level is not applied to the shown commitment yet — always neutral. The
+// database accepts this: its own minimum can only be equal or lower (team reduction).
 const NO_PARTY = { averageLevel: 0 }
 
 export function FocusPage() {
@@ -40,7 +41,16 @@ export function FocusPage() {
   const updatePreferences = useUpdateFocusPreferences()
   const clock = useSessionClock(activeSession ?? null)
   const [rest, setRest] = useState<RestState>({ phase: 'none' })
-  const [encounter, setEncounter] = useState<Encounter>(() => generateRandomEncounter())
+  // The encounter is whatever the campaign says comes next — derived from server
+  // state, so a refresh never rerolls it. No campaign (still loading, failed, empty)
+  // just means focusing without an encounter: productivity never waits on the RPG.
+  const { objective, isLoading: isJourneyLoading } = useJourney()
+  const encounter: Encounter | null = objective
+    ? {
+        kind: objective.node.encounter_kind as EncounterKind,
+        difficulty: objective.node.encounter_difficulty,
+      }
+    : null
   const [encounterSkipped, setEncounterSkipped] = useState(false)
   const startSession = useStartFocusSession()
   const createBattle = useCreateBattle()
@@ -51,13 +61,13 @@ export function FocusPage() {
   )
 
   function returnToIdle() {
-    setEncounter(generateRandomEncounter())
     setEncounterSkipped(false)
     setRest({ phase: 'none' })
   }
 
   function handleAcceptEncounter(commitment: Commitment) {
-    if (commitment.type !== 'focusSession') return
+    if (commitment.type !== 'focusSession' || !objective || !encounter) return
+    const campaignNodeId = objective.node.id
     startSession.mutate(
       { plannedDurationSeconds: commitment.minDurationMinutes * 60, taskId: null },
       {
@@ -68,6 +78,7 @@ export function FocusPage() {
             encounterDifficulty: encounter.difficulty,
             minDurationMinutes: commitment.minDurationMinutes,
             focusSessionId: session.id,
+            campaignNodeId,
           })
         },
       },
@@ -77,8 +88,12 @@ export function FocusPage() {
   function handleConfirmed() {
     if (!activeSession) return
     queryClient.invalidateQueries({ queryKey: queryKeys.battles.forFocusSession(activeSession.id) })
+    queryClient.invalidateQueries({ queryKey: queryKeys.campaign.progress() })
     setRest({ phase: 'battleResult', focusSessionId: activeSession.id })
   }
+
+  const isIdleLoading = isLoading || (!activeSession && isJourneyLoading)
+  const isIdle = !isIdleLoading && !activeSession && rest.phase === 'none'
 
   return (
     <section className="flex flex-col gap-6">
@@ -96,7 +111,7 @@ export function FocusPage() {
         </label>
       </div>
 
-      {isLoading && <p className="text-slate-400">Carregando…</p>}
+      {isIdleLoading && <p className="text-slate-400">Carregando…</p>}
 
       {isError && (
         <p role="alert" className="text-red-400">
@@ -104,9 +119,10 @@ export function FocusPage() {
         </p>
       )}
 
-      {!isLoading && !activeSession && rest.phase === 'none' && !encounterSkipped && (
+      {isIdle && encounter && objective && !encounterSkipped && (
         <EncounterCard
           encounter={encounter}
+          locationName={objective.node.title}
           party={NO_PARTY}
           commitmentType="focusSession"
           onAccept={handleAcceptEncounter}
@@ -114,7 +130,7 @@ export function FocusPage() {
         />
       )}
 
-      {!isLoading && !activeSession && rest.phase === 'none' && encounterSkipped && (
+      {isIdle && (!encounter || encounterSkipped) && (
         <div className="rounded border border-slate-800 p-4">
           <StartSessionForm />
         </div>
