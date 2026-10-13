@@ -3,16 +3,34 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/features/auth/store/auth-store'
+import { createBattle, getBattleForFocusSession } from '@/features/battles/api/battles-repository'
 import {
   getActiveSession,
   listCompletedSessions,
   startSession,
   transitionSession,
 } from '@/features/focus/api/focus-sessions-repository'
+import { listRewardEvents } from '@/features/rewards/api/reward-events-repository'
 import { getProfile, updateFocusPreferences } from '@/features/settings/api/profile-repository'
 import { getTaskById, listTasks } from '@/features/tasks/api/tasks-repository'
+import type { Battle } from '@/features/battles/types'
 import type { FocusSession } from '@/features/focus/types'
 import { FocusPage } from './FocusPage'
+
+vi.mock('@/features/battles/encounter-generator', () => ({
+  generateRandomEncounter: () => ({ kind: 'wild', difficulty: 1 }),
+}))
+
+vi.mock('@/features/battles/api/battles-repository', () => ({
+  createBattle: vi.fn(),
+  getBattleById: vi.fn(),
+  getBattleForTask: vi.fn(),
+  getBattleForFocusSession: vi.fn(),
+}))
+
+vi.mock('@/features/rewards/api/reward-events-repository', () => ({
+  listRewardEvents: vi.fn(),
+}))
 
 vi.mock('@/features/focus/api/focus-sessions-repository', () => ({
   getActiveSession: vi.fn(),
@@ -31,6 +49,9 @@ vi.mock('@/features/tasks/api/tasks-repository', () => ({
   getTaskById: vi.fn(),
 }))
 
+const createBattleMock = vi.mocked(createBattle)
+const getBattleForFocusSessionMock = vi.mocked(getBattleForFocusSession)
+const listRewardEventsMock = vi.mocked(listRewardEvents)
 const getActiveSessionMock = vi.mocked(getActiveSession)
 const startSessionMock = vi.mocked(startSession)
 const transitionSessionMock = vi.mocked(transitionSession)
@@ -57,6 +78,26 @@ function makeSession(overrides: Partial<FocusSession> = {}): FocusSession {
   }
 }
 
+function makeBattle(overrides: Partial<Battle> = {}): Battle {
+  return {
+    id: 'battle-1',
+    owner_id: 'owner-1',
+    encounter_kind: 'wild',
+    encounter_difficulty: 1,
+    commitment_type: 'focusSession',
+    commitment_min_difficulty: null,
+    commitment_min_duration_minutes: 15,
+    task_id: null,
+    focus_session_id: 'session-1',
+    status: 'pending',
+    result: null,
+    team_multiplier_applied: null,
+    created_at: new Date().toISOString(),
+    resolved_at: null,
+    ...overrides,
+  }
+}
+
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -78,6 +119,9 @@ function makeProfile(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
+  createBattleMock.mockReset()
+  getBattleForFocusSessionMock.mockReset().mockResolvedValue(null)
+  listRewardEventsMock.mockReset().mockResolvedValue([])
   getActiveSessionMock.mockReset()
   startSessionMock.mockReset()
   transitionSessionMock.mockReset()
@@ -89,13 +133,53 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'authenticated', session: { user: { id: 'owner-1' } } as never })
 })
 
-describe('FocusPage — no active session', () => {
-  it('shows the start form and starts a session with the chosen duration', async () => {
+async function skipToPlainStartForm() {
+  await userEvent.click(await screen.findByRole('button', { name: 'Focar sem encontro' }))
+  return screen.findByRole('button', { name: 'Iniciar foco' })
+}
+
+describe('FocusPage — encounter before starting', () => {
+  it('shows a pre-battle card with the viable commitment by default', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    renderPage()
+
+    expect(await screen.findByText('Pokémon selvagem')).toBeInTheDocument()
+    expect(
+      screen.getByText('sessão de foco de pelo menos 15 min', { exact: false }),
+    ).toBeInTheDocument()
+  })
+
+  it('accepting the encounter starts a session for the required duration and creates a battle', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    startSessionMock.mockResolvedValue(makeSession({ planned_duration_seconds: 900 }))
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Aceitar encontro' }))
+
+    await waitFor(() =>
+      expect(startSessionMock).toHaveBeenCalledWith('owner-1', {
+        plannedDurationSeconds: 900,
+        taskId: null,
+      }),
+    )
+    await waitFor(() =>
+      expect(createBattleMock).toHaveBeenCalledWith(
+        'owner-1',
+        expect.objectContaining({
+          commitmentType: 'focusSession',
+          minDurationMinutes: 15,
+          focusSessionId: 'session-1',
+        }),
+      ),
+    )
+  })
+
+  it('skipping the encounter falls back to the plain start form, with no battle created', async () => {
     getActiveSessionMock.mockResolvedValue(null)
     startSessionMock.mockResolvedValue(makeSession())
     renderPage()
 
-    await screen.findByRole('button', { name: 'Iniciar foco' })
+    await skipToPlainStartForm()
     await userEvent.click(screen.getByRole('button', { name: '45 min' }))
     await userEvent.click(screen.getByRole('button', { name: 'Iniciar foco' }))
 
@@ -105,6 +189,7 @@ describe('FocusPage — no active session', () => {
         taskId: null,
       }),
     )
+    expect(createBattleMock).not.toHaveBeenCalled()
   })
 })
 
@@ -138,6 +223,17 @@ describe('FocusPage — running session', () => {
     renderPage()
 
     expect(await screen.findByText('Tarefa: Estudar React')).toBeInTheDocument()
+  })
+
+  it('shows a secondary indicator when the session has a linked battle', async () => {
+    const session = makeSession()
+    getActiveSessionMock.mockResolvedValue(session)
+    getBattleForFocusSessionMock.mockResolvedValue(makeBattle())
+    renderPage()
+
+    expect(
+      await screen.findByText('Encontro: Pokémon selvagem — compromisso: foco ≥ 15 min'),
+    ).toBeInTheDocument()
   })
 
   it('cancels only after confirming', async () => {
@@ -194,6 +290,65 @@ describe('FocusPage — awaiting confirmation', () => {
     )
   })
 
+  it('shows the resolved battle result (with XP) before offering a rest break', async () => {
+    const session = makeSession({
+      started_at: new Date(Date.now() - 2_000_000).toISOString(),
+      planned_duration_seconds: 60,
+    })
+    getActiveSessionMock.mockResolvedValueOnce(session).mockResolvedValue(null)
+    transitionSessionMock.mockResolvedValue({
+      ...session,
+      status: 'completed',
+      ended_at: new Date().toISOString(),
+    })
+    getBattleForFocusSessionMock.mockResolvedValue(
+      makeBattle({ status: 'resolved', result: 'victory', resolved_at: new Date().toISOString() }),
+    )
+    listRewardEventsMock.mockResolvedValue([
+      {
+        id: 'r1',
+        owner_id: 'owner-1',
+        source_type: 'battle',
+        source_id: 'battle-1',
+        reward_type: 'xp',
+        amount: 20,
+        created_at: new Date().toISOString(),
+      },
+    ] as never)
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirmar conclusão' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Pular animação' }))
+    expect(await screen.findByText('Vitória contra Pokémon selvagem!')).toBeInTheDocument()
+    expect(screen.getByText('+20 XP')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(
+      await screen.findByText('Sessão concluída! Quer descansar um pouco antes da próxima?'),
+    ).toBeInTheDocument()
+  })
+
+  it('skips straight to the rest prompt when the session had no linked battle', async () => {
+    const session = makeSession({
+      started_at: new Date(Date.now() - 2_000_000).toISOString(),
+      planned_duration_seconds: 60,
+    })
+    getActiveSessionMock.mockResolvedValueOnce(session).mockResolvedValue(null)
+    transitionSessionMock.mockResolvedValue({
+      ...session,
+      status: 'completed',
+      ended_at: new Date().toISOString(),
+    })
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirmar conclusão' }))
+
+    expect(
+      await screen.findByText('Sessão concluída! Quer descansar um pouco antes da próxima?'),
+    ).toBeInTheDocument()
+  })
+
   it('offers an optional rest break after confirming, which can be started or skipped', async () => {
     const session = makeSession({
       started_at: new Date(Date.now() - 2_000_000).toISOString(),
@@ -217,7 +372,7 @@ describe('FocusPage — awaiting confirmation', () => {
     expect(await screen.findByRole('timer')).toHaveTextContent('05:00')
 
     await userEvent.click(screen.getByRole('button', { name: 'Pular descanso' }))
-    expect(await screen.findByRole('button', { name: 'Iniciar foco' })).toBeInTheDocument()
+    await screen.findByText('Pokémon selvagem')
   })
 })
 
@@ -229,7 +384,8 @@ describe('FocusPage — preferences', () => {
     )
     renderPage()
 
-    await screen.findByRole('button', { name: '10 min' })
+    await skipToPlainStartForm()
+    expect(screen.getByRole('button', { name: '10 min' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '20 min' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '25 min' })).not.toBeInTheDocument()
   })
@@ -238,7 +394,7 @@ describe('FocusPage — preferences', () => {
     getActiveSessionMock.mockResolvedValue(null)
     renderPage()
 
-    await screen.findByRole('button', { name: 'Iniciar foco' })
+    await screen.findByText('Pokémon selvagem')
     await userEvent.click(screen.getByRole('checkbox', { name: 'Som ao terminar' }))
 
     await waitFor(() =>

@@ -174,3 +174,20 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Decisão:** `resolve_battle_on_task_completed`/`resolve_battle_on_focus_session_completed` envolvem a chamada a `resolve_pending_battle` num bloco `BEGIN...EXCEPTION WHEN OTHERS THEN...END`, engolindo qualquer erro (só emite um `RAISE WARNING`, não propaga).
 **Motivo:** como os triggers rodam na **mesma transação** da `UPDATE` que os disparou, uma exceção não tratada aqui reverteria a conclusão da tarefa/sessão inteira — violando diretamente o princípio não-negociável "a produtividade nunca depende de vencer uma batalha" (RF-021, seção 5.1 do Plan.md). Um bug na lógica de batalha nunca pode impedir que uma tarefa real seja marcada como concluída.
 **Validado:** a lógica foi revisada para não ter nenhum caminho óbvio de exceção dado que as constraints do banco já impedem os estados inconsistentes que poderiam causá-la; não forcei uma falha deliberada para testar isso (exigiria burlar constraints de propósito), então fica registrado como verificado por revisão de código, não por injeção de falha.
+
+## 2026-10-13 — T-023 integrado só na tela de Foco, não em Tarefas
+
+**Decisão:** o fluxo de encontro/batalha (`EncounterCard` → iniciar sessão + criar batalha → `ActiveSessionPanel` com indicador secundário → `BattleResultSection` ao confirmar) foi conectado apenas na `FocusPage`. A `TasksPage` continua sem nenhuma opção de aceitar um encontro ao concluir uma tarefa.
+**Motivo:** sessões de foco têm um gate natural de "antes de começar" (o botão Iniciar), que é exatamente onde RF-022 exige mostrar o compromisso. Tarefas são criadas e concluídas em momentos não planejados (RF-009: conclusão de um clique) — encaixar "escolher um encontro" nesse fluxo exigiria um redesenho da UX de tarefas que não estava no escopo combinado para este task.
+**Implicação:** `EncounterCard`/`BattleSequence`/`BattleResultCard` já são genéricos (`commitmentType: 'task' | 'focusSession'`) e os testes já cobrem o caminho `task` isoladamente — plugar isso em `TasksPage` no futuro é majoritariamente só wiring, não motor novo. A cópia de `EncounterCard`'s botão de pular ("Focar sem encontro") é específica de foco; precisará de uma prop de label ao reutilizar em tarefas.
+
+## 2026-10-13 — Gerador de encontro aleatório é um placeholder até o T-028 (campanha)
+
+**Decisão:** `generateRandomEncounter()` sorteia tipo (ponderado) e dificuldade (1–5) sem nenhuma noção de região/rota/progressão — é puramente aleatório, gerado no cliente, efêmero (não persiste até o usuário aceitar).
+**Motivo:** o sistema de campanha/rotas (T-028) não existe; "o motor determina o próximo encontro válido" (seção 5.2 do Plan.md) pressupõe dados de rota que ainda não foram modelados. Um gerador aleatório simples é suficiente para exercitar a cadeia completa (card → aceitar → resolver → resultado) sem fingir uma progressão que não existe.
+**Implicação:** quando o T-028 existir, `generateRandomEncounter` é substituído por uma função que consulta `campaign_nodes`/`encounter_tables` — a assinatura (`() => Encounter`) e tudo que a consome (`EncounterCard`, `FocusPage`) não precisam mudar.
+
+## 2026-10-13 — "Mostrar adversário e time de maneira secundária" (T-018) finalmente cumprido, só para foco
+
+**Decisão:** enquanto uma sessão de foco ativa tem uma batalha vinculada, a `FocusPage` mostra uma linha discreta ("Encontro: ... — compromisso: ...") abaixo do `ActiveSessionPanel`, sem nenhuma animação nem elemento chamativo durante o foco em si (T-023: "não rodar animação... durante foco").
+**Motivo:** esse era um item do checklist do T-018 que eu tinha deixado explicitamente pendente por falta de dados de batalha; agora que `battles` existe, dá pra cumprir.
