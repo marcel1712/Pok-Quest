@@ -58,7 +58,7 @@ describe('getViableCommitments', () => {
     const commitments = getViableCommitments({ kind: 'gymLeader', difficulty: 5 }, noParty)
     expect(findFocusCommitment(commitments)).toEqual({
       type: 'focusSession',
-      minDurationMinutes: 75,
+      minDurationMinutes: 5,
     })
   })
 
@@ -133,20 +133,20 @@ describe('resolveBattle — worked examples from GAME_RULES.md', () => {
     expect(outcome).toEqual({ result: 'victory', xpAwarded: 100, teamMultiplierApplied: 1 })
   })
 
-  it('sessão curta demais: trainer dif. 3 exige >=45min, sessão de 25min confirmada -> withdrawal', () => {
+  it('sessão curta demais: trainer dif. 3 exige >=3min, sessão de 2min confirmada -> withdrawal', () => {
     const encounter: Encounter = { kind: 'trainer', difficulty: 3 }
     const focusCommitment = findFocusCommitment(getViableCommitments(encounter, noParty))
-    expect(focusCommitment).toEqual({ type: 'focusSession', minDurationMinutes: 45 })
+    expect(focusCommitment).toEqual({ type: 'focusSession', minDurationMinutes: 3 })
 
     const outcome = resolveBattle(
       focusCommitment,
-      { type: 'focusSession', durationMinutes: 25, wasConfirmed: true },
+      { type: 'focusSession', durationMinutes: 2, wasConfirmed: true },
       noParty,
     )
     expect(outcome).toEqual({ result: 'withdrawal', xpAwarded: 0, teamMultiplierApplied: 1 })
   })
 
-  it('foco abortado: wild dif. 1 exige >=15min, sessão de 20min NÃO confirmada -> withdrawal', () => {
+  it('foco abortado: wild dif. 1 exige >=1min, sessão de 20min NÃO confirmada -> withdrawal', () => {
     const encounter: Encounter = { kind: 'wild', difficulty: 1 }
     const focusCommitment = findFocusCommitment(getViableCommitments(encounter, noParty))
 

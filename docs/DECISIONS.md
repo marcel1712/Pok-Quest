@@ -228,3 +228,43 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Motivo:** o índice único parcial em `(owner_id, party_position)` rejeitaria um `UPDATE` que tentasse colocar dois Pokémon na mesma posição, mesmo que momentaneamente — três chamadas de rede separadas do cliente arriscam deixar a troca pela metade se a conexão cair entre uma e outra. Uma função só, com as três etapas na mesma transação implícita, é atômica.
 **Por que `SECURITY INVOKER`, não `DEFINER`:** RLS em `owned_pokemon` já restringe cada `UPDATE` ao próprio dono (`owner_id = auth.uid()`); não há nada sensível o suficiente aqui pra justificar rodar como um papel privilegiado — ao contrário de `resolve_pending_battle`/`capture_from_battle`, que decidem crédito de XP/criação de Pokémon.
 **Validado:** script de verificação confirma que trocar dois Pokémon de posição (incluindo box↔time) produz o resultado esperado sem violar a constraint de posição única.
+
+## 2026-10-13 — Lacuna real encontrada no início do T-026: RLS não restringe colunas, só linhas
+
+**O que aconteceu:** a política de `UPDATE` em `owned_pokemon` (T-025) só verifica `owner_id = auth.uid()` — isso restringe **quais linhas**, não **quais colunas**. Como o grant padrão de `UPDATE` do Supabase cobre a tabela inteira, um usuário autenticado podia, legalmente, dar `PATCH` no próprio Pokémon e mudar `level`, `xp` ou `pokedex_number` pra qualquer valor, contornando todo o sistema de recompensa que o T-026 estava construindo.
+**Como descobri:** percebi isso ao planejar a RPC de evolução — se o cliente já pudesse escrever `pokedex_number` livremente, a RPC toda seria decorativa. Confirmei consultando `information_schema.column_privileges`: `anon` e `authenticated` tinham `UPDATE` em **todas** as colunas, não só `party_position`.
+**Correção:** `revoke update on owned_pokemon from authenticated, anon; grant update (party_position, nickname) on owned_pokemon to authenticated;` — agora só essas duas colunas são editáveis direto pelo cliente; `level`/`xp`/`pokedex_number`/`pending_evolution_to_pokedex_number` só mudam via função `SECURITY DEFINER`.
+**Validado com papel real, não só com `postgres`:** testei com `SET ROLE authenticated` (não bastava testar como `postgres`, que ignora grants de coluna) — confirmei que `party_position` continua editável e `level` é rejeitado com `insufficient_privilege`.
+**Lição combinada com as de T-022/T-025:** RLS (linhas), grants de função (`EXECUTE`) e grants de coluna (`UPDATE (colunas)`) são **três mecanismos independentes** no Postgres — nenhum cobre os outros dois. Qualquer tabela nova com colunas "resultado"/"pontuação" precisa ser revisada nos três eixos, não só no de RLS.
+
+## 2026-10-13 — Curva de XP "medium fast" (nível³), versionada
+
+**Decisão:** `totalXpForLevel(level) = level³` (mesma curva "medium fast" dos jogos de Pokémon), implementada em paralelo em `src/features/pokemon/xp.ts` (TS, pra UI) e `total_xp_for_level()` (SQL, pra trigger) — mesma duplicação já documentada para o motor de batalha. Versionada via `XP_CURVE_VERSION = 1` no TS, mencionada aqui.
+**Motivo:** curva bem conhecida, fácil de calcular nos dois lados sem tabela de lookup. "Versionada" aqui significa: se a fórmula mudar depois, bump da constante + decisão nova aqui — não uma tabela `game_settings` ainda (mesma decisão já tomada para as constantes de batalha).
+**Nota de aritmética:** a função SQL usa multiplicação exata (`level::bigint * level::bigint * level::bigint`), não o operador `^` do Postgres — `^` promove pra `double precision`, e evitei qualquer ambiguidade de arredondamento mesmo que inofensiva nos níveis 1–100.
+
+## 2026-10-13 — Evolução em múltiplos estágios: o pendente é sempre o alvo mais avançado elegível, recalculado do zero
+
+**Decisão:** o trigger de level-up recalcula a cadeia de evolução inteira a partir da espécie **atual** (`pokedex_number`, que só muda quando `confirm_evolution` é chamado) a cada vez que o nível muda — nunca incrementa o campo pendente de forma incremental. Um salto grande de XP (ex.: nível 5 → 40) grava direto o estágio final elegível (Torterra), pulando o estágio intermediário (Grotle) no campo pendente — mas um salto pequeno (nível 5 → 31, abaixo do limiar de Torterra) corretamente fica pendente em Grotle, não em Torterra.
+**Por que recalcular do zero em vez de só avançar:** garante que o campo pendente reflita sempre a verdade atual, mesmo que o usuário não confirme evoluções por um tempo e continue ganhando XP — não haveria como "perder" uma atualização de estágio.
+**Pendência sem solução de trade/pedra:** nenhuma das 17 espécies do catálogo evolui por troca ou pedra (todas são por nível), então essa lacuna do checklist do T-026 ("alternativas explícitas a trocas/itens impossíveis") não teve um caso real pra resolver ainda. Política decidida preventivamente: se uma espécie assim entrar no catálogo no futuro, `evolves_to_pokedex_number` fica `null` pra ela (sem evolução automática) até uma decisão explícita documentada aqui — nunca fingir um requisito de nível que não existe de verdade no jogo original.
+
+## 2026-10-13 — Evolução é só confirmável pelo cliente, nunca escolhida
+
+**Decisão:** `confirm_evolution(id)` só aplica o `pending_evolution_to_pokedex_number` que o trigger já decidiu; não existe nenhuma via pela qual o cliente escolha ou force um alvo de evolução diferente. `EvolutionPrompt` no frontend só tem "Evoluir agora"/"Depois" — nenhum seletor de espécie.
+**Motivo:** consistente com a restrição de colunas acima — `pokedex_number` nunca é editável direto pelo cliente, então mesmo a confirmação de evolução passa por uma função que só move um valor já decidido, nunca aceita um novo.
+**"Pulado e retomado":** "Depois" só esconde o aviso localmente neste componente (estado React); a flag `pending_evolution_to_pokedex_number` continua na linha do banco, então reabrir a tela de Equipe mostra o aviso de novo — não há como perder essa evolução pendente por navegar pra outro lugar.
+
+## 2026-10-13 — `BASE_FOCUS_MINUTES_PER_DIFFICULTY` reduzido de 15 para 1 minuto
+
+**Decisão:** o mínimo de foco exigido pro encontro mais fácil (selvagem, dificuldade 1) caiu de 15 min para 1 min. Pedido explícito do usuário ao testar o T-026 — 15 min reais por teste de batalha/captura tornava o ciclo de desenvolvimento/uso diário impraticavelmente lento.
+**O que NÃO muda:** `FOCUS_XP_PER_MINUTE` continua 1.5 — uma sessão normal de 25–60 min rende exatamente o mesmo XP de antes. A constante alterada é só o **mínimo pra qualificar** o encontro mais fácil, não a recompensa por tempo real investido. `TASK_XP_PER_DIFFICULTY` e as constantes de time não mudaram.
+**Onde foi atualizado:** `src/features/battles/engine.ts` (a constante + comentário com a data/motivo), `docs/GAME_RULES.md` (fórmula, teto de 5 min em vez de 75, e os dois exemplos verificáveis que dependiam do valor antigo), `engine.test.ts` e `FocusPage.test.tsx` (expectativas numéricas).
+**Nenhuma migration necessária:** `BASE_FOCUS_MINUTES_PER_DIFFICULTY` só existe no lado cliente (`getViableCommitments`, chamado ao montar o `EncounterCard`) — o valor final já calculado é gravado em `battles.commitment_min_duration_minutes` na criação; a resolução no banco (`resolve_pending_battle`) só compara contra o que já foi salvo, nunca recalcula a fórmula.
+**Pendência de teste:** dei um Chimchar (nível 5, 125 XP, slot 1 do time) direto via SQL pro usuário testar time/evolução sem precisar passar pela captura de novo — não é uma captura real, é um dado de teste.
+
+## 2026-10-13 — Pokémon inicial concedido manualmente, sem fluxo de onboarding
+
+**Decisão:** o usuário recebeu um Chimchar diretamente via `insert` no banco, não pela captura normal — porque não existe nenhum fluxo de escolha de inicial ainda (T-029, Fase 5, não construído).
+**Motivo:** o usuário pediu explicitamente ("preciso que você me dê algum pokémon pra testar"), e sem um Pokémon nenhuma feature de time/evolução pode ser testada manualmente.
+**Implicação:** isso não é uma captura real (não existe linha em `captures`, não passou pelo `capture_from_battle`) — é só um dado de teste. Quando o T-029 existir, ele vai lidar com a escolha real do inicial; esse Chimchar manual não precisa ser removido nem migrado, é só mais um Pokémon na coleção do usuário como outro qualquer.

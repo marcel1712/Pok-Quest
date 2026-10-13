@@ -247,6 +247,7 @@ export type Database = {
           nickname: string | null
           owner_id: string
           party_position: number | null
+          pending_evolution_to_pokedex_number: number | null
           pokedex_number: number
           updated_at: string
           xp: number
@@ -259,6 +260,7 @@ export type Database = {
           nickname?: string | null
           owner_id: string
           party_position?: number | null
+          pending_evolution_to_pokedex_number?: number | null
           pokedex_number: number
           updated_at?: string
           xp?: number
@@ -271,11 +273,19 @@ export type Database = {
           nickname?: string | null
           owner_id?: string
           party_position?: number | null
+          pending_evolution_to_pokedex_number?: number | null
           pokedex_number?: number
           updated_at?: string
           xp?: number
         }
         Relationships: [
+          {
+            foreignKeyName: 'owned_pokemon_pending_evolution_to_pokedex_number_fkey'
+            columns: ['pending_evolution_to_pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
+          },
           {
             foreignKeyName: 'owned_pokemon_pokedex_number_fkey'
             columns: ['pokedex_number']
@@ -481,6 +491,29 @@ export type Database = {
           nickname: string | null
           owner_id: string
           party_position: number | null
+          pending_evolution_to_pokedex_number: number | null
+          pokedex_number: number
+          updated_at: string
+          xp: number
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'owned_pokemon'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_evolution: {
+        Args: { p_owned_pokemon_id: string }
+        Returns: {
+          captured_at: string
+          created_at: string
+          id: string
+          level: number
+          nickname: string | null
+          owner_id: string
+          party_position: number | null
+          pending_evolution_to_pokedex_number: number | null
           pokedex_number: number
           updated_at: string
           xp: number
@@ -506,6 +539,7 @@ export type Database = {
         Args: { p_pokemon_a: string; p_pokemon_b: string }
         Returns: undefined
       }
+      total_xp_for_level: { Args: { p_level: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never

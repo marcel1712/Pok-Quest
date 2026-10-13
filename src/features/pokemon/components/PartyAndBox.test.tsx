@@ -37,6 +37,7 @@ function makePokemon(overrides: Partial<OwnedPokemon> = {}): OwnedPokemon {
     nickname: null,
     level: 5,
     xp: 0,
+    pending_evolution_to_pokedex_number: null,
     party_position: null,
     captured_at: new Date().toISOString(),
     created_at: new Date().toISOString(),

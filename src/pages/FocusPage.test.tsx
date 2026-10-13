@@ -86,7 +86,7 @@ function makeBattle(overrides: Partial<Battle> = {}): Battle {
     encounter_difficulty: 1,
     commitment_type: 'focusSession',
     commitment_min_difficulty: null,
-    commitment_min_duration_minutes: 15,
+    commitment_min_duration_minutes: 1,
     task_id: null,
     focus_session_id: 'session-1',
     status: 'pending',
@@ -146,20 +146,20 @@ describe('FocusPage — encounter before starting', () => {
 
     expect(await screen.findByText('Pokémon selvagem')).toBeInTheDocument()
     expect(
-      screen.getByText('sessão de foco de pelo menos 15 min', { exact: false }),
+      screen.getByText('sessão de foco de pelo menos 1 min', { exact: false }),
     ).toBeInTheDocument()
   })
 
   it('accepting the encounter starts a session for the required duration and creates a battle', async () => {
     getActiveSessionMock.mockResolvedValue(null)
-    startSessionMock.mockResolvedValue(makeSession({ planned_duration_seconds: 900 }))
+    startSessionMock.mockResolvedValue(makeSession({ planned_duration_seconds: 60 }))
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Aceitar encontro' }))
 
     await waitFor(() =>
       expect(startSessionMock).toHaveBeenCalledWith('owner-1', {
-        plannedDurationSeconds: 900,
+        plannedDurationSeconds: 60,
         taskId: null,
       }),
     )
@@ -168,7 +168,7 @@ describe('FocusPage — encounter before starting', () => {
         'owner-1',
         expect.objectContaining({
           commitmentType: 'focusSession',
-          minDurationMinutes: 15,
+          minDurationMinutes: 1,
           focusSessionId: 'session-1',
         }),
       ),
@@ -233,7 +233,7 @@ describe('FocusPage — running session', () => {
     renderPage()
 
     expect(
-      await screen.findByText('Encontro: Pokémon selvagem — compromisso: foco ≥ 15 min'),
+      await screen.findByText('Encontro: Pokémon selvagem — compromisso: foco ≥ 1 min'),
     ).toBeInTheDocument()
   })
 

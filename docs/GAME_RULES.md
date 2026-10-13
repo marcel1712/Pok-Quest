@@ -95,7 +95,8 @@ Um time forte **reduz** o que é exigido (nunca aumenta); a dificuldade mínima 
 ## Compromissos viáveis (RF-020, RF-026)
 
 ```
-BASE_FOCUS_MINUTES_PER_DIFFICULTY = 15  // minutos de foco por ponto de dificuldade efetiva
+BASE_FOCUS_MINUTES_PER_DIFFICULTY = 1  // minutos de foco por ponto de dificuldade efetiva
+                                        // (era 15 — reduzido em 2026-10-13, ver docs/DECISIONS.md)
 
 getViableCommitments(encounter, party):
   d = effectiveDifficulty(encounter, party)
@@ -105,7 +106,7 @@ getViableCommitments(encounter, party):
   ]
 ```
 
-Com `difficulty` no máximo 5 e redução máxima por time, o maior `minDurationMinutes` possível é `5 * 15 = 75` minutos — bem abaixo do teto de 120 min de `focus_sessions.planned_duration_seconds`, então nunca "exige Pomodoros de 2 horas" (princípio 5.1.5).
+Com `difficulty` no máximo 5 e redução máxima por time, o maior `minDurationMinutes` possível é `5 * 1 = 5` minutos — bem abaixo do teto de 120 min de `focus_sessions.planned_duration_seconds`, então nunca "exige Pomodoros de 2 horas" (princípio 5.1.5). Isso é só o **mínimo pra qualificar** o encontro mais fácil: uma sessão normal de 25–60 min continua rendendo o XP correspondente aos minutos reais (não ao mínimo).
 
 ## Exemplos verificáveis
 
@@ -114,8 +115,8 @@ Com `difficulty` no máximo 5 e redução máxima por time, o maior `minDuration
 | Iniciante              | wild, dif. 1      | nível médio 0  | dificuldade ≥ 1                 | tarefa dif. 1                       | victory    | 20  |
 | Time forte vs. ginásio | gymLeader, dif. 5 | nível médio 50 | dificuldade ≥ 1 (reduzido de 5) | tarefa dif. 1                       | victory    | 20  |
 | Tarefa difícil         | trainer, dif. 3   | nível médio 0  | dificuldade ≥ 3                 | tarefa dif. 5                       | victory    | 100 |
-| Sessão curta demais    | trainer, dif. 3   | nível médio 0  | foco ≥ 45 min                   | sessão de 25 min confirmada         | withdrawal | 0   |
-| Foco abortado          | wild, dif. 1      | nível médio 0  | foco ≥ 15 min                   | sessão de 20 min **não confirmada** | withdrawal | 0   |
+| Sessão curta demais    | trainer, dif. 3   | nível médio 0  | foco ≥ 3 min                    | sessão de 2 min confirmada          | withdrawal | 0   |
+| Foco abortado          | wild, dif. 1      | nível médio 0  | foco ≥ 1 min                    | sessão de 20 min **não confirmada** | withdrawal | 0   |
 
 Esses exemplos são portados 1:1 para `engine.test.ts`.
 

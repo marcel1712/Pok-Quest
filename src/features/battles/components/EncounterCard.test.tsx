@@ -34,7 +34,7 @@ describe('EncounterCard', () => {
       />,
     )
 
-    expect(screen.getByText(/pelo menos 15 min/)).toBeInTheDocument()
+    expect(screen.getByText(/pelo menos 1 min/)).toBeInTheDocument()
   })
 
   it('calls onSkip without ever calling onAccept', async () => {

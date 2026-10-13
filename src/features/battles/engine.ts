@@ -13,7 +13,12 @@ export const FOCUS_XP_PER_MINUTE = 1.5
 export const TEAM_BONUS_PER_LEVEL = 0.01
 export const MAX_TEAM_BONUS = 0.5
 export const TEAM_REDUCTION_PER_LEVELS = 10
-export const BASE_FOCUS_MINUTES_PER_DIFFICULTY = 15
+// Was 15 — lowered 2026-10-13 at the user's request: a 15-minute minimum made even
+// the easiest wild encounter too slow to test (or just use) day-to-day. A normal
+// 25-60 min Pomodoro still earns the same XP as before (reward scales with actual
+// minutes spent, not this minimum); this only lowers the bar to *qualify* for the
+// easiest encounters. See docs/DECISIONS.md.
+export const BASE_FOCUS_MINUTES_PER_DIFFICULTY = 1
 
 /** Never below 1 (there's always a viable way to win) and never increased by a
  * stronger team — only reduced (RF-027: team helps, never creates a surprise block). */

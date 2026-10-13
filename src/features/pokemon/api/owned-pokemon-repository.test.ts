@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   captureFromBattle,
+  confirmEvolution,
   getCaptureForBattle,
   listOwnedPokemon,
   setPartyPosition,
@@ -129,6 +130,28 @@ describe('captureFromBattle', () => {
 
     await expect(captureFromBattle('battle-1')).rejects.toThrow(
       'Só é possível capturar depois de uma vitória confirmada.',
+    )
+  })
+})
+
+describe('confirmEvolution', () => {
+  it('calls the evolution RPC with the pokemon id and returns the evolved pokemon', async () => {
+    rpcMock.mockResolvedValue({ data: { id: 'p1', pokedex_number: 389 }, error: null })
+
+    const result = await confirmEvolution('p1')
+
+    expect(rpcMock).toHaveBeenCalledWith('confirm_evolution', { p_owned_pokemon_id: 'p1' })
+    expect(result).toEqual({ id: 'p1', pokedex_number: 389 })
+  })
+
+  it('throws when nothing is pending', async () => {
+    rpcMock.mockResolvedValue({
+      data: null,
+      error: new Error('Esse Pokémon não tem nenhuma evolução pendente.'),
+    })
+
+    await expect(confirmEvolution('p1')).rejects.toThrow(
+      'Esse Pokémon não tem nenhuma evolução pendente.',
     )
   })
 })

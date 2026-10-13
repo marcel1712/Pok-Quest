@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/shared/lib/query-keys'
 import {
   captureFromBattle,
+  confirmEvolution,
   setPartyPosition,
   swapPartyPositions,
 } from '../api/owned-pokemon-repository'
@@ -34,6 +35,15 @@ export function useSwapPartyPositions() {
   return useMutation({
     mutationFn: ({ pokemonIdA, pokemonIdB }: { pokemonIdA: string; pokemonIdB: string }) =>
       swapPartyPositions(pokemonIdA, pokemonIdB),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.ownedPokemon.all }),
+  })
+}
+
+export function useConfirmEvolution() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (ownedPokemonId: string) => confirmEvolution(ownedPokemonId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.ownedPokemon.all }),
   })
 }

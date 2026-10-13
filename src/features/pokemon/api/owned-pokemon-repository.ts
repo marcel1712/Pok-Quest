@@ -60,3 +60,16 @@ export async function captureFromBattle(battleId: string): Promise<OwnedPokemon>
   if (error) throw error
   return data
 }
+
+/**
+ * Applies a pending evolution already decided server-side by the leveling trigger —
+ * the client only ever confirms or leaves it pending, never chooses the target
+ * species (see confirm_evolution in the migration).
+ */
+export async function confirmEvolution(ownedPokemonId: string): Promise<OwnedPokemon> {
+  const { data, error } = await supabase.rpc('confirm_evolution', {
+    p_owned_pokemon_id: ownedPokemonId,
+  })
+  if (error) throw error
+  return data
+}
