@@ -33,6 +33,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      battles: {
+        Row: {
+          commitment_min_difficulty: number | null
+          commitment_min_duration_minutes: number | null
+          commitment_type: string
+          created_at: string
+          encounter_difficulty: number
+          encounter_kind: string
+          focus_session_id: string | null
+          id: string
+          owner_id: string
+          resolved_at: string | null
+          result: string | null
+          status: string
+          task_id: string | null
+          team_multiplier_applied: number | null
+        }
+        Insert: {
+          commitment_min_difficulty?: number | null
+          commitment_min_duration_minutes?: number | null
+          commitment_type: string
+          created_at?: string
+          encounter_difficulty: number
+          encounter_kind: string
+          focus_session_id?: string | null
+          id?: string
+          owner_id: string
+          resolved_at?: string | null
+          result?: string | null
+          status?: string
+          task_id?: string | null
+          team_multiplier_applied?: number | null
+        }
+        Update: {
+          commitment_min_difficulty?: number | null
+          commitment_min_duration_minutes?: number | null
+          commitment_type?: string
+          created_at?: string
+          encounter_difficulty?: number
+          encounter_kind?: string
+          focus_session_id?: string | null
+          id?: string
+          owner_id?: string
+          resolved_at?: string | null
+          result?: string | null
+          status?: string
+          task_id?: string | null
+          team_multiplier_applied?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'battles_focus_session_id_fkey'
+            columns: ['focus_session_id']
+            isOneToOne: false
+            referencedRelation: 'focus_sessions'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'battles_task_id_fkey'
+            columns: ['task_id']
+            isOneToOne: false
+            referencedRelation: 'tasks'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       categories: {
         Row: {
           color: string | null
@@ -167,6 +233,36 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_events: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          owner_id: string
+          reward_type: string
+          source_id: string
+          source_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          owner_id: string
+          reward_type?: string
+          source_id: string
+          source_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          owner_id?: string
+          reward_type?: string
+          source_id?: string
+          source_type?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           category_id: string | null
@@ -222,7 +318,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      resolve_pending_battle: {
+        Args: {
+          p_focus_session_id: string
+          p_fulfillment_difficulty: number
+          p_fulfillment_minutes: number
+          p_owner_id: string
+          p_task_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

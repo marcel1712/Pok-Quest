@@ -1,3 +1,8 @@
+import type { Tables, TablesInsert } from '@/shared/types/database'
+
+export type Battle = Tables<'battles'>
+export type BattleInsert = TablesInsert<'battles'>
+
 export type EncounterKind = 'wild' | 'trainer' | 'rival' | 'gymLeader' | 'milestone'
 
 export type Encounter = {

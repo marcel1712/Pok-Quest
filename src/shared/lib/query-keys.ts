@@ -28,4 +28,15 @@ export const queryKeys = {
     all: ['profile'] as const,
     detail: (id: string) => ['profile', 'detail', id] as const,
   },
+  battles: {
+    all: ['battles'] as const,
+    detail: (id: string) => ['battles', 'detail', id] as const,
+    forTask: (taskId: string) => ['battles', 'forTask', taskId] as const,
+    forFocusSession: (focusSessionId: string) =>
+      ['battles', 'forFocusSession', focusSessionId] as const,
+  },
+  rewardEvents: {
+    all: ['rewardEvents'] as const,
+    list: (filters: Record<string, unknown> = {}) => ['rewardEvents', 'list', filters] as const,
+  },
 }
