@@ -93,3 +93,12 @@ export function cancelSession(session: StatusHolder, nowIso: string): FocusSessi
   }
   return { status: 'cancelled', ended_at: nowIso }
 }
+
+/** Edge-detector for the completion chime (T-018): fires only the instant the phase
+ * newly becomes `awaiting_confirmation`, not on every render while it stays there. */
+export function didJustReachAwaitingConfirmation(
+  previousPhase: FocusSessionPhase | undefined,
+  currentPhase: FocusSessionPhase,
+): boolean {
+  return currentPhase === 'awaiting_confirmation' && previousPhase !== 'awaiting_confirmation'
+}

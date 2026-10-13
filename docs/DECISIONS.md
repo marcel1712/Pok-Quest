@@ -92,3 +92,10 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 
 **Decisão:** `useActiveFocusSession()` consulta `focus_sessions` por status `running`/`paused` sempre que montado; qualquer página pode usá-lo para recuperar a sessão verdadeira ao navegar ou recarregar. Não criei nenhuma UI (banner persistente, mini-player) que o consuma ainda — isso é o T-018 (tela de Foco).
 **Motivo:** T-016/T-017 cobrem o motor (estado + persistência); a experiência visual completa, incluindo onde/como mostrar que existe uma sessão ativa fora da tela de Foco, é explicitamente escopo do T-018.
+
+## 2026-10-13 — Tela de Foco (T-018) sem adversário/equipe, e áudio opcional sem preferências persistidas
+
+**Decisão:** a tela de Foco não mostra nenhum "adversário"/equipe Pokémon (só um aviso discreto de que isso vem na Fase 4). O som opcional de término (checkbox "Som ao terminar") é estado local do componente — não persiste entre visitas/dispositivos, e não existe nenhum sistema de preferências do usuário ainda.
+**Motivo:** `battles`/`pokemon`/`game_progress` não existem (Fase 4); construir uma seção falsa seria pior que não ter nenhuma. Preferências reais de áudio/tempo são T-020/T-040 — até lá, um toggle local e efêmero já cumpre "feedback opcional de término" sem fingir infraestrutura que não existe.
+**Limitação documentada (parte do checklist do T-018):** numa aba em segundo plano/throttled, o som pode atrasar ou não disparar — `setInterval` não tem garantia de rodar nesse estado. Isso não afeta a contagem visível, que é sempre recalculada a partir dos timestamps persistidos quando a aba volta ao foco (ver `use-session-clock.ts`); só o aviso sonoro em si pode falhar. Não há Service Worker/Notifications API aqui para contornar isso.
+**Implicação:** quando T-020 construir preferências reais, mover `soundEnabled` de `useState` local para o store/tabela de configurações é a única mudança necessária — a lógica do `useCompletionChime` já está isolada e não precisa mudar.

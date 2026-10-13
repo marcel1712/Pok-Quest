@@ -4,6 +4,7 @@ import {
   computeElapsedSeconds,
   computeRemainingSeconds,
   confirmSession,
+  didJustReachAwaitingConfirmation,
   FocusSessionTransitionError,
   getSessionPhase,
   pauseSession,
@@ -156,5 +157,22 @@ describe('cancelSession', () => {
     expect(() => cancelSession({ status: 'completed' }, new Date(T0).toISOString())).toThrow(
       FocusSessionTransitionError,
     )
+  })
+})
+
+describe('didJustReachAwaitingConfirmation', () => {
+  it('fires on the transition into awaiting_confirmation', () => {
+    expect(didJustReachAwaitingConfirmation('running', 'awaiting_confirmation')).toBe(true)
+  })
+
+  it('does not fire again while it stays awaiting_confirmation', () => {
+    expect(didJustReachAwaitingConfirmation('awaiting_confirmation', 'awaiting_confirmation')).toBe(
+      false,
+    )
+  })
+
+  it('does not fire for unrelated phases', () => {
+    expect(didJustReachAwaitingConfirmation('running', 'paused')).toBe(false)
+    expect(didJustReachAwaitingConfirmation(undefined, 'running')).toBe(false)
   })
 })

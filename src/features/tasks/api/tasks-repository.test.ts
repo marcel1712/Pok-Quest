@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createTask, listTasks, updateTask } from './tasks-repository'
+import { createTask, getTaskById, listTasks, updateTask } from './tasks-repository'
 
 type QueryResult = { data: unknown; error: unknown }
 
@@ -11,6 +11,7 @@ function createQueryBuilderMock(result: QueryResult) {
     insert: vi.fn(() => builder),
     update: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
     then: (
       onFulfilled: (value: QueryResult) => unknown,
       onRejected?: (reason: unknown) => unknown,
@@ -55,6 +56,25 @@ describe('listTasks', () => {
     fromMock.mockReturnValue(builder)
 
     await expect(listTasks()).rejects.toThrow('boom')
+  })
+})
+
+describe('getTaskById', () => {
+  it('fetches a single task by id', async () => {
+    const builder = createQueryBuilderMock({ data: { id: '1', title: 'x' }, error: null })
+    fromMock.mockReturnValue(builder)
+
+    const result = await getTaskById('1')
+
+    expect(builder.eq).toHaveBeenCalledWith('id', '1')
+    expect(result).toEqual({ id: '1', title: 'x' })
+  })
+
+  it('returns null when the task does not exist', async () => {
+    const builder = createQueryBuilderMock({ data: null, error: null })
+    fromMock.mockReturnValue(builder)
+
+    expect(await getTaskById('missing')).toBeNull()
   })
 })
 

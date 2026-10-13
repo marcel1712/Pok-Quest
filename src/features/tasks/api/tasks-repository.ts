@@ -17,6 +17,12 @@ export async function listTasks(filters: TaskListFilters = {}): Promise<Task[]> 
   return data
 }
 
+export async function getTaskById(id: string): Promise<Task | null> {
+  const { data, error } = await supabase.from('tasks').select('*').eq('id', id).maybeSingle()
+  if (error) throw error
+  return data
+}
+
 export async function createTask(
   ownerId: string,
   input: {
