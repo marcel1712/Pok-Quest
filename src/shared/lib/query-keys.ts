@@ -14,4 +14,9 @@ export const queryKeys = {
     all: ['categories'] as const,
     list: () => ['categories', 'list'] as const,
   },
+  productivityEvents: {
+    all: ['productivityEvents'] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      ['productivityEvents', 'list', filters] as const,
+  },
 }

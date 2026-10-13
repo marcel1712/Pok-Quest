@@ -63,6 +63,36 @@ export type Database = {
         }
         Relationships: []
       }
+      productivity_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          occurred_at: string
+          owner_id: string
+          source_id: string
+          source_type: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          occurred_at: string
+          owner_id: string
+          source_id: string
+          source_type: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          owner_id?: string
+          source_id?: string
+          source_type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
