@@ -9,6 +9,16 @@ import {
 import type { CampaignContent, CampaignNode } from '@/features/journey/types'
 import { JourneyPage } from './JourneyPage'
 
+vi.mock('@/features/journey/api/game-progress-repository', () => ({
+  getGameProgress: vi.fn(() => Promise.resolve({ starter_pokedex_number: 390 })),
+  chooseStarter: vi.fn(),
+}))
+
+vi.mock('@/features/pokemon/api/species-catalog-repository', () => ({
+  listSpeciesCatalog: vi.fn(() => Promise.resolve([])),
+  getSpeciesByPokedexNumber: vi.fn(),
+}))
+
 vi.mock('@/features/journey/api/campaign-repository', () => ({
   getCampaignContent: vi.fn(),
   listCampaignProgress: vi.fn(),

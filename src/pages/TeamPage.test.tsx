@@ -10,6 +10,11 @@ import {
 import type { OwnedPokemon } from '@/features/pokemon/types'
 import { TeamPage } from './TeamPage'
 
+vi.mock('@/features/journey/api/game-progress-repository', () => ({
+  getGameProgress: vi.fn(() => Promise.resolve({ starter_pokedex_number: 390 })),
+  chooseStarter: vi.fn(),
+}))
+
 vi.mock('@/features/pokemon/api/owned-pokemon-repository', () => ({
   listOwnedPokemon: vi.fn(),
   setPartyPosition: vi.fn(),

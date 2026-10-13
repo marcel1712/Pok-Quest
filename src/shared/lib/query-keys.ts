@@ -53,6 +53,10 @@ export const queryKeys = {
     content: () => ['campaign', 'content'] as const,
     progress: () => ['campaign', 'progress'] as const,
   },
+  gameProgress: {
+    all: ['gameProgress'] as const,
+    detail: () => ['gameProgress', 'detail'] as const,
+  },
   captures: {
     all: ['captures'] as const,
     forBattle: (battleId: string) => ['captures', 'forBattle', battleId] as const,

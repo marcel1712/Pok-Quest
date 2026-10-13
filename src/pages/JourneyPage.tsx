@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { JourneyNodeList } from '@/features/journey/components/JourneyNodeList'
+import { StarterOnboarding } from '@/features/journey/components/StarterOnboarding'
 import { useJourney } from '@/features/journey/hooks/use-journey'
 import { toFriendlyErrorMessage } from '@/shared/lib/supabase-error'
 
@@ -31,6 +32,8 @@ export function JourneyPage() {
           atividade.
         </p>
       </div>
+
+      <StarterOnboarding />
 
       {isLoading && <p className="text-slate-400">Carregando…</p>}
 

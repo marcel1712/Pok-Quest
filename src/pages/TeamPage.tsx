@@ -1,3 +1,4 @@
+import { StarterOnboarding } from '@/features/journey/components/StarterOnboarding'
 import { EvolutionPrompt } from '@/features/pokemon/components/EvolutionPrompt'
 import { PartyAndBox } from '@/features/pokemon/components/PartyAndBox'
 import { SpeciesCatalogGrid } from '@/features/pokemon/components/SpeciesCatalogGrid'
@@ -15,6 +16,8 @@ export function TeamPage() {
           Capture Pokémon vencendo encontros selvagens na tela de Foco.
         </p>
       </div>
+
+      <StarterOnboarding />
 
       {pendingEvolutions.length > 0 && (
         <div className="flex flex-col gap-3">

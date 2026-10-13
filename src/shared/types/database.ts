@@ -378,6 +378,42 @@ export type Database = {
           },
         ]
       }
+      game_progress: {
+        Row: {
+          owner_id: string
+          starter_chosen_at: string
+          starter_owned_pokemon_id: string | null
+          starter_pokedex_number: number
+        }
+        Insert: {
+          owner_id: string
+          starter_chosen_at?: string
+          starter_owned_pokemon_id?: string | null
+          starter_pokedex_number: number
+        }
+        Update: {
+          owner_id?: string
+          starter_chosen_at?: string
+          starter_owned_pokemon_id?: string | null
+          starter_pokedex_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'game_progress_starter_owned_pokemon_id_fkey'
+            columns: ['starter_owned_pokemon_id']
+            isOneToOne: false
+            referencedRelation: 'owned_pokemon'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'game_progress_starter_pokedex_number_fkey'
+            columns: ['starter_pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
+          },
+        ]
+      }
       owned_pokemon: {
         Row: {
           captured_at: string
@@ -623,6 +659,28 @@ export type Database = {
     Functions: {
       capture_from_battle: {
         Args: { p_battle_id: string }
+        Returns: {
+          captured_at: string
+          created_at: string
+          id: string
+          level: number
+          nickname: string | null
+          owner_id: string
+          party_position: number | null
+          pending_evolution_to_pokedex_number: number | null
+          pokedex_number: number
+          updated_at: string
+          xp: number
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'owned_pokemon'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      choose_starter: {
+        Args: { p_pokedex_number: number }
         Returns: {
           captured_at: string
           created_at: string
