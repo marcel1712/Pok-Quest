@@ -1,4 +1,4 @@
-import type { FocusSessionPhase, FocusSessionStatus, FocusSessionUpdate } from './types'
+import type { FocusSessionPhase, FocusSessionUpdate } from './types'
 
 export class FocusSessionTransitionError extends Error {
   constructor(message: string) {
@@ -7,8 +7,10 @@ export class FocusSessionTransitionError extends Error {
   }
 }
 
+// `status` is plain `string` here (not FocusSessionStatus) because the generated DB row
+// type widens the `text` column that way too — see the same tradeoff in tasks/domain.ts.
 export type SessionTiming = {
-  status: FocusSessionStatus
+  status: string
   started_at: string
   paused_at: string | null
   accumulated_pause_seconds: number
@@ -40,11 +42,12 @@ export function computeRemainingSeconds(session: SessionTiming, nowMs: number): 
  * pausing was itself an explicit user action.
  */
 export function getSessionPhase(session: SessionTiming, nowMs: number): FocusSessionPhase {
-  if (session.status === 'completed' || session.status === 'cancelled') return session.status
+  if (session.status === 'completed') return 'completed'
+  if (session.status === 'cancelled') return 'cancelled'
   if (session.status === 'running' && computeRemainingSeconds(session, nowMs) <= 0) {
     return 'awaiting_confirmation'
   }
-  return session.status
+  return session.status === 'paused' ? 'paused' : 'running'
 }
 
 type StatusHolder = { status: string; paused_at?: string | null }

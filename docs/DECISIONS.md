@@ -81,3 +81,14 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Decisão:** `focus_sessions` tem `task_id` (opcional, nullable) mas **não** tem nenhuma coluna para vincular a um encontro/batalha ainda.
 **Motivo:** as tabelas `battles`/`battle_commitments` não existem (Fase 4 do backlog). RF-017 descreve o vínculo a um "encontro/desafio" como esperado, mas os objetivos do produto (seção 1.1, item 3: "permitir sessões de foco sem precisar interagir com o jogo") e os princípios de seção 5.1 confirmam que o Pomodoro tem que funcionar de forma independente da camada de RPG.
 **Implicação:** quando a Fase 4 criar `battles`, uma migration nova adiciona uma coluna `battle_id` nullable a `focus_sessions` — não é uma mudança destrutiva.
+
+## 2026-10-13 — Conflito de sessão concorrente (T-017) é resolvido no repositório, não exposto como erro
+
+**Decisão:** `startSession()` (`src/features/focus/api/focus-sessions-repository.ts`) tenta o `insert`; se colidir com a restrição "uma sessão ativa por usuário" (Postgres `23505`), ele busca e retorna a sessão que já está ativa, em vez de propagar o erro de conflito pro chamador.
+**Motivo:** RF-019/T-017 pedem para "resolver conflito entre duas abas/dispositivos e mostrar o estado verdadeiro" — se a aba B tentar iniciar uma sessão enquanto a aba A já tem uma rodando, a aba B deve simplesmente passar a refletir a sessão real da aba A, não mostrar uma mensagem de erro para uma ação que, do ponto de vista do usuário, nem devia ter sido possível.
+**Implicação:** `useStartFocusSession` nunca precisa de um tratamento especial de erro para esse caso específico — o retorno da mutação já é a sessão verdadeira, ativa ou recém-criada.
+
+## 2026-10-13 — "Restaurar sessão ativa" (T-017) é responsabilidade do cache do TanStack Query, ainda sem UI
+
+**Decisão:** `useActiveFocusSession()` consulta `focus_sessions` por status `running`/`paused` sempre que montado; qualquer página pode usá-lo para recuperar a sessão verdadeira ao navegar ou recarregar. Não criei nenhuma UI (banner persistente, mini-player) que o consuma ainda — isso é o T-018 (tela de Foco).
+**Motivo:** T-016/T-017 cobrem o motor (estado + persistência); a experiência visual completa, incluindo onde/como mostrar que existe uma sessão ativa fora da tela de Foco, é explicitamente escopo do T-018.

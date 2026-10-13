@@ -19,4 +19,8 @@ export const queryKeys = {
     list: (filters: Record<string, unknown> = {}) =>
       ['productivityEvents', 'list', filters] as const,
   },
+  focusSessions: {
+    all: ['focusSessions'] as const,
+    active: () => ['focusSessions', 'active'] as const,
+  },
 }
