@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getActiveSession, startSession, updateSession } from './focus-sessions-repository'
+import {
+  getActiveSession,
+  getSessionById,
+  startSession,
+  transitionSession,
+} from './focus-sessions-repository'
 
 type QueryResult = { data: unknown; error: unknown }
 
@@ -92,28 +97,73 @@ describe('startSession', () => {
   })
 })
 
-describe('updateSession', () => {
-  it('updates by id and returns the updated row', async () => {
+describe('getSessionById', () => {
+  it('fetches a single session by id', async () => {
     const builder = createQueryBuilderMock({ data: { id: '1', status: 'paused' }, error: null })
     fromMock.mockReturnValue(builder)
 
-    const result = await updateSession('1', { status: 'paused', paused_at: '2026-01-01T00:00:00Z' })
+    expect(await getSessionById('1')).toEqual({ id: '1', status: 'paused' })
+    expect(builder.eq).toHaveBeenCalledWith('id', '1')
+  })
+
+  it('returns null when the session does not exist', async () => {
+    const builder = createQueryBuilderMock({ data: null, error: null })
+    fromMock.mockReturnValue(builder)
+
+    expect(await getSessionById('missing')).toBeNull()
+  })
+})
+
+describe('transitionSession', () => {
+  it('updates by id when the row is still in one of the expected statuses', async () => {
+    const builder = createQueryBuilderMock({ data: { id: '1', status: 'paused' }, error: null })
+    fromMock.mockReturnValue(builder)
+
+    const result = await transitionSession('1', ['running'], {
+      status: 'paused',
+      paused_at: '2026-01-01T00:00:00Z',
+    })
 
     expect(builder.update).toHaveBeenCalledWith({
       status: 'paused',
       paused_at: '2026-01-01T00:00:00Z',
     })
     expect(builder.eq).toHaveBeenCalledWith('id', '1')
+    expect(builder.in).toHaveBeenCalledWith('status', ['running'])
     expect(result).toEqual({ id: '1', status: 'paused' })
   })
 
-  it('throws when the session does not exist', async () => {
-    const builder = createQueryBuilderMock({
-      data: null,
-      error: { code: 'PGRST116', message: 'no rows returned' },
-    })
+  it('throws on a genuine query error', async () => {
+    const builder = createQueryBuilderMock({ data: null, error: new Error('network down') })
     fromMock.mockReturnValue(builder)
 
-    await expect(updateSession('missing', { status: 'cancelled' })).rejects.toBeTruthy()
+    await expect(transitionSession('1', ['running'], { status: 'paused' })).rejects.toThrow(
+      'network down',
+    )
+  })
+
+  it("resolves a retried request (dropped response) by returning the session's current state instead of erroring or re-patching it", async () => {
+    // The conditional update matches zero rows because a prior, successful request
+    // already moved the session past 'running' (e.g. confirm already completed it).
+    const updateBuilder = createQueryBuilderMock({ data: null, error: null })
+    const currentSession = { id: '1', status: 'completed', ended_at: '2026-01-01T00:00:00Z' }
+    const selectBuilder = createQueryBuilderMock({ data: currentSession, error: null })
+
+    fromMock.mockReturnValueOnce(updateBuilder).mockReturnValueOnce(selectBuilder)
+
+    const result = await transitionSession('1', ['running'], {
+      status: 'completed',
+      ended_at: '2026-01-01T05:00:00Z', // a later, retried timestamp — must NOT win
+    })
+
+    expect(result).toEqual(currentSession)
+  })
+
+  it('throws if the session no longer exists at all (not just a status mismatch)', async () => {
+    const updateBuilder = createQueryBuilderMock({ data: null, error: null })
+    const selectBuilder = createQueryBuilderMock({ data: null, error: null })
+    fromMock.mockReturnValueOnce(updateBuilder).mockReturnValueOnce(selectBuilder)
+
+    await expect(transitionSession('missing', ['running'], { status: 'paused' })).rejects.toThrow()
   })
 })

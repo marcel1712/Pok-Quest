@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/features/auth/store/auth-store'
 import { queryKeys } from '@/shared/lib/query-keys'
-import { startSession, updateSession } from '../api/focus-sessions-repository'
+import { startSession, transitionSession } from '../api/focus-sessions-repository'
 import { cancelSession, confirmSession, pauseSession, resumeSession } from '../domain'
 import type { StartSessionInput } from '../schemas'
 import type { FocusSession } from '../types'
@@ -25,29 +25,42 @@ export function useStartFocusSession() {
   })
 }
 
+/**
+ * `fromStatuses` is the status (or statuses) the session must still be in for this
+ * transition to actually apply — see `transitionSession` for why that guard matters
+ * for retries after a dropped response.
+ */
 function useSessionTransitionMutation(
+  fromStatuses: string[],
   computePatch: (session: FocusSession) => ReturnType<typeof pauseSession>,
 ) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (session: FocusSession) => updateSession(session.id, computePatch(session)),
+    mutationFn: (session: FocusSession) =>
+      transitionSession(session.id, fromStatuses, computePatch(session)),
     onSuccess: (session) => syncActiveSession(queryClient, session),
   })
 }
 
 export function usePauseFocusSession() {
-  return useSessionTransitionMutation((session) => pauseSession(session, new Date().toISOString()))
+  return useSessionTransitionMutation(['running'], (session) =>
+    pauseSession(session, new Date().toISOString()),
+  )
 }
 
 export function useResumeFocusSession() {
-  return useSessionTransitionMutation((session) => resumeSession(session, new Date().toISOString()))
+  return useSessionTransitionMutation(['paused'], (session) =>
+    resumeSession(session, new Date().toISOString()),
+  )
 }
 
 export function useCancelFocusSession() {
-  return useSessionTransitionMutation((session) => cancelSession(session, new Date().toISOString()))
+  return useSessionTransitionMutation(['running', 'paused'], (session) =>
+    cancelSession(session, new Date().toISOString()),
+  )
 }
 
 export function useConfirmFocusSession() {
-  return useSessionTransitionMutation((session) => confirmSession(session, Date.now()))
+  return useSessionTransitionMutation(['running'], (session) => confirmSession(session, Date.now()))
 }

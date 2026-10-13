@@ -6,7 +6,7 @@ import { useAuthStore } from '@/features/auth/store/auth-store'
 import {
   getActiveSession,
   startSession,
-  updateSession,
+  transitionSession,
 } from '@/features/focus/api/focus-sessions-repository'
 import { getTaskById, listTasks } from '@/features/tasks/api/tasks-repository'
 import type { FocusSession } from '@/features/focus/types'
@@ -15,7 +15,7 @@ import { FocusPage } from './FocusPage'
 vi.mock('@/features/focus/api/focus-sessions-repository', () => ({
   getActiveSession: vi.fn(),
   startSession: vi.fn(),
-  updateSession: vi.fn(),
+  transitionSession: vi.fn(),
 }))
 
 vi.mock('@/features/tasks/api/tasks-repository', () => ({
@@ -25,7 +25,7 @@ vi.mock('@/features/tasks/api/tasks-repository', () => ({
 
 const getActiveSessionMock = vi.mocked(getActiveSession)
 const startSessionMock = vi.mocked(startSession)
-const updateSessionMock = vi.mocked(updateSession)
+const transitionSessionMock = vi.mocked(transitionSession)
 const listTasksMock = vi.mocked(listTasks)
 const getTaskByIdMock = vi.mocked(getTaskById)
 
@@ -58,7 +58,7 @@ function renderPage() {
 beforeEach(() => {
   getActiveSessionMock.mockReset()
   startSessionMock.mockReset()
-  updateSessionMock.mockReset()
+  transitionSessionMock.mockReset()
   listTasksMock.mockReset().mockResolvedValue([])
   getTaskByIdMock.mockReset()
   useAuthStore.setState({ status: 'authenticated', session: { user: { id: 'owner-1' } } as never })
@@ -87,7 +87,7 @@ describe('FocusPage — running session', () => {
   it('shows the countdown and pauses the session', async () => {
     const session = makeSession()
     getActiveSessionMock.mockResolvedValue(session)
-    updateSessionMock.mockResolvedValue({
+    transitionSessionMock.mockResolvedValue({
       ...session,
       status: 'paused',
       paused_at: new Date().toISOString(),
@@ -98,8 +98,9 @@ describe('FocusPage — running session', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pausar' }))
 
     await waitFor(() =>
-      expect(updateSessionMock).toHaveBeenCalledWith(
+      expect(transitionSessionMock).toHaveBeenCalledWith(
         'session-1',
+        ['running'],
         expect.objectContaining({ status: 'paused' }),
       ),
     )
@@ -117,7 +118,7 @@ describe('FocusPage — running session', () => {
   it('cancels only after confirming', async () => {
     const session = makeSession()
     getActiveSessionMock.mockResolvedValue(session)
-    updateSessionMock.mockResolvedValue({
+    transitionSessionMock.mockResolvedValue({
       ...session,
       status: 'cancelled',
       ended_at: new Date().toISOString(),
@@ -126,13 +127,14 @@ describe('FocusPage — running session', () => {
 
     await screen.findByRole('timer')
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
-    expect(updateSessionMock).not.toHaveBeenCalled()
+    expect(transitionSessionMock).not.toHaveBeenCalled()
 
     await userEvent.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
 
     await waitFor(() =>
-      expect(updateSessionMock).toHaveBeenCalledWith(
+      expect(transitionSessionMock).toHaveBeenCalledWith(
         'session-1',
+        ['running', 'paused'],
         expect.objectContaining({ status: 'cancelled' }),
       ),
     )
@@ -146,7 +148,7 @@ describe('FocusPage — awaiting confirmation', () => {
       planned_duration_seconds: 60,
     })
     getActiveSessionMock.mockResolvedValue(session)
-    updateSessionMock.mockResolvedValue({
+    transitionSessionMock.mockResolvedValue({
       ...session,
       status: 'completed',
       ended_at: new Date().toISOString(),
@@ -159,8 +161,9 @@ describe('FocusPage — awaiting confirmation', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirmar conclusão' }))
 
     await waitFor(() =>
-      expect(updateSessionMock).toHaveBeenCalledWith(
+      expect(transitionSessionMock).toHaveBeenCalledWith(
         'session-1',
+        ['running'],
         expect.objectContaining({ status: 'completed' }),
       ),
     )
