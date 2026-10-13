@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getActiveSession,
   getSessionById,
+  listCompletedSessions,
   startSession,
   transitionSession,
 } from './focus-sessions-repository'
@@ -15,6 +16,8 @@ function createQueryBuilderMock(result: QueryResult) {
     insert: vi.fn(() => builder),
     update: vi.fn(() => builder),
     eq: vi.fn(() => builder),
+    order: vi.fn(() => builder),
+    limit: vi.fn(() => Promise.resolve(result)),
     maybeSingle: vi.fn(() => Promise.resolve(result)),
     single: vi.fn(() => Promise.resolve(result)),
   }
@@ -55,6 +58,26 @@ describe('getActiveSession', () => {
     fromMock.mockReturnValue(builder)
 
     await expect(getActiveSession()).rejects.toThrow('boom')
+  })
+})
+
+describe('listCompletedSessions', () => {
+  it('filters by completed status, ordered most recent first', async () => {
+    const builder = createQueryBuilderMock({ data: [{ id: '1' }], error: null })
+    fromMock.mockReturnValue(builder)
+
+    const result = await listCompletedSessions()
+
+    expect(builder.eq).toHaveBeenCalledWith('status', 'completed')
+    expect(builder.order).toHaveBeenCalledWith('ended_at', { ascending: false })
+    expect(result).toEqual([{ id: '1' }])
+  })
+
+  it('throws when the query returns an error', async () => {
+    const builder = createQueryBuilderMock({ data: null, error: new Error('boom') })
+    fromMock.mockReturnValue(builder)
+
+    await expect(listCompletedSessions()).rejects.toThrow('boom')
   })
 })
 

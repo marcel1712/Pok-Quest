@@ -106,3 +106,33 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Motivo:** o trigger do T-013/T-016 já garante que o evento de recompensa nunca duplica, mas ele não protege os outros campos da sessão (`paused_at`, `ended_at`, `accumulated_pause_seconds`) de serem sobrescritos por um `UPDATE` de retry sem essa guarda. Sem o guard condicional, um "confirmar" reenviado (resposta perdida, usuário ou rede reenvia) sobrescreveria `ended_at` com um timestamp mais tardio; um "pausar" reenviado sobrescreveria `paused_at`, fazendo o próximo "retomar" calcular `accumulated_pause_seconds` errado (contando pausa de menos). Isso é silencioso — não gera erro nem evento duplicado — mas corrompe dados.
 **Por que devolver o estado atual em vez de erro:** do ponto de vista do usuário, a ação (pausar/confirmar/cancelar) já tinha funcionado na primeira tentativa; mostrar um erro para o retry seria enganoso. `useSessionTransitionMutation` recebe de volta a sessão verdadeira e sincroniza a UI com ela.
 **Validado:** testes de repositório mockados cobrindo exatamente esse cenário (update condicional não bate nenhuma linha → busca e retorna o estado atual, com o timestamp do retry explicitamente descartado). Não precisou de migration nova — é lógica de aplicação, não de banco.
+
+## 2026-10-13 — Lacuna encontrada e corrigida: `profiles` nunca tinha uma linha para a conta existente
+
+**Decisão:** nova migration (`20261013174059_create_profile_on_signup.sql`) cria um trigger `handle_new_user()` em `auth.users` que insere a linha em `public.profiles` automaticamente, e faz backfill imediato para usuários já existentes.
+**Motivo:** a tabela `profiles` existe desde o T-007, mas nada nunca criou a linha para a conta real — ela foi criada direto no painel do Supabase (não pelo fluxo de signup da própria app, que está desabilitado). Sem essa linha, T-020 (preferências em `profiles.settings`) não teria onde persistir nada. Descoberto ao tentar implementar T-020 e confirmar via `supabase db query --linked` que `select * from profiles` retornava vazio.
+**Validado:** rodei a query direto no banco depois do push — a linha existe agora, com `timezone='UTC'` (padrão) e `settings={}`.
+
+## 2026-10-13 — Preferências de foco armazenadas em `profiles.settings.focus` (JSON), não em tabela própria
+
+**Decisão:** presets de duração, descanso curto/longo, som e movimento reduzido ficam dentro do JSON `profiles.settings`, sob a chave `focus`, lidos/escritos via `parseFocusPreferences()`/`updateFocusPreferences()` (`src/features/settings/`). Dados ausentes ou inválidos nessa chave caem para `DEFAULT_FOCUS_PREFERENCES` por completo (sem merge parcial de campo individual invalido).
+**Motivo:** a coluna `settings jsonb` já existe desde o T-007 exatamente para isso (seção 7.3 do Plan.md). Criar uma tabela `game_settings`/preferências dedicada agora seria prematuro para um blob de configuração de baixo risco, de um usuário só.
+**Implicação:** futuras preferências de outras features (ex.: jornada, áudio de batalha) podem reutilizar o mesmo padrão, cada uma com sua própria chave dentro de `settings`, sem migration nova.
+
+## 2026-10-13 — Descanso curto/longo (T-020) é só um timer local, sem persistência
+
+**Decisão:** `RestBreakTimer`/`RestBreakPrompt` não criam nenhuma linha em `focus_sessions` nem em `productivity_events` — é um `setInterval` local, perdido se a aba fechar.
+**Motivo:** o descanso é explicitamente opcional e não gera recompensa (RF-018, "sem transformar pausa em obrigação"); criar um registro persistente para algo que não conta XP e que o usuário pode pular a qualquer momento seria complexidade sem benefício real.
+**Implicação:** se no futuro o descanso precisar aparecer em estatísticas (ex.: "tempo total de descanso"), será necessário promovê-lo a um registro persistido — não existe hoje.
+
+## 2026-10-13 — "Semana" no histórico de foco é uma janela rolante de 7 dias, não semana de calendário
+
+**Decisão:** `summarizeFocusHistory()` (`src/features/focus/stats.ts`) soma sessões concluídas nos últimos 7×24h corridos a partir de agora, não "desde segunda-feira" ou qualquer início de semana fixo.
+**Motivo:** Plan.md não especifica o dia de início da semana; uma janela rolante é mais simples de implementar e testar corretamente, e evita a escolha arbitrária de domingo vs. segunda.
+**Implicação:** se o produto precisar de "semana de calendário" no futuro (ex.: para comparar com metas semanais fixas), é uma mudança isolada dentro de `summarizeFocusHistory`.
+
+## 2026-10-13 — Timezone correto via `profiles.timezone` + `Intl.DateTimeFormat`, não o relógio da máquina
+
+**Decisão:** `toZonedDateString()` usa `Intl.DateTimeFormat('en-CA', { timeZone, ... })` para obter o `YYYY-MM-DD` de um timestamp UTC no fuso **salvo no perfil** do usuário — não `Date.getFullYear()`/`getMonth()`/`getDate()` (que usam o fuso do dispositivo rodando o código).
+**Motivo:** RNF-013 exige consistência de fuso nos agrupamentos; usar o fuso do dispositivo quebraria ao acessar de outro computador/fuso. `profiles.timezone` (default `'UTC'`) agora tem uma UI para ajustar (`TimezoneSettings`, botão "usar fuso deste navegador").
+**Nota de inconsistência conhecida:** `src/features/tasks/scheduling.ts` (`todayIsoDate()`, usado para separar tarefas em Hoje/Pendentes/Futuras no T-012) ainda usa o fuso local do dispositivo, não `profiles.timezone`. Não corrigi isso agora porque está fora do escopo do T-020 (é sobre tarefas, não foco) — fica registrado aqui como pendência para quando alguém tocar em agrupamento de tarefas por data de novo.

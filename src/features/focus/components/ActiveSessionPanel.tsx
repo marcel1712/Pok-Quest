@@ -11,7 +11,15 @@ import {
 import { useSessionClock } from '../hooks/use-session-clock'
 import type { FocusSession } from '../types'
 
-export function ActiveSessionPanel({ session }: { session: FocusSession }) {
+export function ActiveSessionPanel({
+  session,
+  reduceMotion = false,
+  onConfirmed,
+}: {
+  session: FocusSession
+  reduceMotion?: boolean
+  onConfirmed?: () => void
+}) {
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false)
   const clock = useSessionClock(session)
   const { data: linkedTask } = useTask(session.task_id)
@@ -54,7 +62,10 @@ export function ActiveSessionPanel({ session }: { session: FocusSession }) {
       >
         <div
           className="h-full bg-emerald-500 motion-reduce:transition-none"
-          style={{ width: `${progressPercent}%`, transition: 'width 1s linear' }}
+          style={{
+            width: `${progressPercent}%`,
+            transition: reduceMotion ? 'none' : 'width 1s linear',
+          }}
         />
       </div>
 
@@ -70,7 +81,7 @@ export function ActiveSessionPanel({ session }: { session: FocusSession }) {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => confirm.mutate(session)}
+              onClick={() => confirm.mutate(session, { onSuccess: () => onConfirmed?.() })}
               disabled={isBusy}
               className="rounded bg-emerald-500 px-6 py-2.5 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
             >

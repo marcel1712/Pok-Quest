@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useTasks } from '@/features/tasks/hooks/use-tasks'
+import { useFocusPreferences } from '@/features/settings/hooks/use-focus-preferences'
 import { toFriendlyErrorMessage } from '@/shared/lib/supabase-error'
 import { useStartFocusSession } from '../hooks/use-focus-session-mutations'
 
-const PRESETS_MINUTES = [25, 30, 45, 60]
-
 export function StartSessionForm() {
+  const { preferences } = useFocusPreferences()
   const [minutes, setMinutes] = useState(25)
   const [taskId, setTaskId] = useState<string>('')
   const { data: tasks } = useTasks({ status: 'pending' })
@@ -23,7 +23,7 @@ export function StartSessionForm() {
       <div>
         <p className="mb-2 text-sm text-slate-400">Duração</p>
         <div className="flex flex-wrap gap-2">
-          {PRESETS_MINUTES.map((preset) => (
+          {preferences.presetsMinutes.map((preset) => (
             <button
               key={preset}
               type="button"

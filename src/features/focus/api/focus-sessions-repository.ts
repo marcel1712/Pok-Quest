@@ -47,6 +47,20 @@ export async function startSession(
   return data
 }
 
+/** Completed sessions only (CA: "métricas usam apenas sessões válidas") — ordered most
+ * recent first, capped so a long history can't make the stats query unbounded. */
+export async function listCompletedSessions(limit = 200): Promise<FocusSession[]> {
+  const { data, error } = await supabase
+    .from('focus_sessions')
+    .select('*')
+    .eq('status', 'completed')
+    .order('ended_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data
+}
+
 export async function getSessionById(id: string): Promise<FocusSession | null> {
   const { data, error } = await supabase
     .from('focus_sessions')

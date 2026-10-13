@@ -5,9 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/features/auth/store/auth-store'
 import {
   getActiveSession,
+  listCompletedSessions,
   startSession,
   transitionSession,
 } from '@/features/focus/api/focus-sessions-repository'
+import { getProfile, updateFocusPreferences } from '@/features/settings/api/profile-repository'
 import { getTaskById, listTasks } from '@/features/tasks/api/tasks-repository'
 import type { FocusSession } from '@/features/focus/types'
 import { FocusPage } from './FocusPage'
@@ -16,6 +18,12 @@ vi.mock('@/features/focus/api/focus-sessions-repository', () => ({
   getActiveSession: vi.fn(),
   startSession: vi.fn(),
   transitionSession: vi.fn(),
+  listCompletedSessions: vi.fn(),
+}))
+
+vi.mock('@/features/settings/api/profile-repository', () => ({
+  getProfile: vi.fn(),
+  updateFocusPreferences: vi.fn(),
 }))
 
 vi.mock('@/features/tasks/api/tasks-repository', () => ({
@@ -26,6 +34,9 @@ vi.mock('@/features/tasks/api/tasks-repository', () => ({
 const getActiveSessionMock = vi.mocked(getActiveSession)
 const startSessionMock = vi.mocked(startSession)
 const transitionSessionMock = vi.mocked(transitionSession)
+const listCompletedSessionsMock = vi.mocked(listCompletedSessions)
+const getProfileMock = vi.mocked(getProfile)
+const updateFocusPreferencesMock = vi.mocked(updateFocusPreferences)
 const listTasksMock = vi.mocked(listTasks)
 const getTaskByIdMock = vi.mocked(getTaskById)
 
@@ -55,10 +66,24 @@ function renderPage() {
   )
 }
 
+function makeProfile(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'owner-1',
+    timezone: 'UTC',
+    settings: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    ...overrides,
+  }
+}
+
 beforeEach(() => {
   getActiveSessionMock.mockReset()
   startSessionMock.mockReset()
   transitionSessionMock.mockReset()
+  listCompletedSessionsMock.mockReset().mockResolvedValue([])
+  getProfileMock.mockReset().mockResolvedValue(makeProfile() as never)
+  updateFocusPreferencesMock.mockReset()
   listTasksMock.mockReset().mockResolvedValue([])
   getTaskByIdMock.mockReset()
   useAuthStore.setState({ status: 'authenticated', session: { user: { id: 'owner-1' } } as never })
@@ -167,5 +192,74 @@ describe('FocusPage — awaiting confirmation', () => {
         expect.objectContaining({ status: 'completed' }),
       ),
     )
+  })
+
+  it('offers an optional rest break after confirming, which can be started or skipped', async () => {
+    const session = makeSession({
+      started_at: new Date(Date.now() - 2_000_000).toISOString(),
+      planned_duration_seconds: 60,
+    })
+    getActiveSessionMock.mockResolvedValueOnce(session).mockResolvedValue(null)
+    transitionSessionMock.mockResolvedValue({
+      ...session,
+      status: 'completed',
+      ended_at: new Date().toISOString(),
+    })
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirmar conclusão' }))
+
+    expect(
+      await screen.findByText('Sessão concluída! Quer descansar um pouco antes da próxima?'),
+    ).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Descanso curto (5 min)' }))
+    expect(await screen.findByRole('timer')).toHaveTextContent('05:00')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Pular descanso' }))
+    expect(await screen.findByRole('button', { name: 'Iniciar foco' })).toBeInTheDocument()
+  })
+})
+
+describe('FocusPage — preferences', () => {
+  it('uses the stored presets instead of hardcoded ones', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    getProfileMock.mockResolvedValue(
+      makeProfile({ settings: { focus: { presetsMinutes: [10, 20] } } }) as never,
+    )
+    renderPage()
+
+    await screen.findByRole('button', { name: '10 min' })
+    expect(screen.getByRole('button', { name: '20 min' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '25 min' })).not.toBeInTheDocument()
+  })
+
+  it('persists the sound preference when the checkbox is toggled', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    renderPage()
+
+    await screen.findByRole('button', { name: 'Iniciar foco' })
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Som ao terminar' }))
+
+    await waitFor(() =>
+      expect(updateFocusPreferencesMock).toHaveBeenCalledWith(
+        'owner-1',
+        expect.objectContaining({ soundEnabled: true }),
+      ),
+    )
+  })
+})
+
+describe('FocusPage — history', () => {
+  it('shows today and 7-day totals from completed sessions only', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+    listCompletedSessionsMock.mockResolvedValue([
+      makeSession({ status: 'completed', ended_at: twoDaysAgo, planned_duration_seconds: 1500 }),
+    ] as never)
+    renderPage()
+
+    expect(await screen.findByText('0 sessões · 0 min')).toBeInTheDocument()
+    expect(screen.getByText('1 sessão · 25 min')).toBeInTheDocument()
   })
 })

@@ -22,5 +22,10 @@ export const queryKeys = {
   focusSessions: {
     all: ['focusSessions'] as const,
     active: () => ['focusSessions', 'active'] as const,
+    completedHistory: () => ['focusSessions', 'completedHistory'] as const,
+  },
+  profile: {
+    all: ['profile'] as const,
+    detail: (id: string) => ['profile', 'detail', id] as const,
   },
 }
