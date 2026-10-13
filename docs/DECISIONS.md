@@ -191,3 +191,21 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 
 **Decisão:** enquanto uma sessão de foco ativa tem uma batalha vinculada, a `FocusPage` mostra uma linha discreta ("Encontro: ... — compromisso: ...") abaixo do `ActiveSessionPanel`, sem nenhuma animação nem elemento chamativo durante o foco em si (T-023: "não rodar animação... durante foco").
 **Motivo:** esse era um item do checklist do T-018 que eu tinha deixado explicitamente pendente por falta de dados de batalha; agora que `battles` existe, dá pra cumprir.
+
+## 2026-10-13 — Catálogo de espécies (T-024): escopo curado de 17 espécies, evolução hardcoded
+
+**Decisão:** `species_catalog` tem só os 3 iniciais de Sinnoh (Turtwig, Chimchar, Piplup) + suas linhas evolutivas completas, mais 3 linhas comuns de rota inicial (Starly, Bidoof, Shinx) — 17 espécies no total, não o Pokédex completo. As relações de evolução (`evolves_to_pokedex_number`, `evolution_min_level`) foram **digitadas manualmente** em `scripts/import-species-catalog.ts` a partir de fatos reais dos jogos (Diamond/Pearl/Platinum), não derivadas do endpoint `evolution-chain` da PokéAPI.
+**Motivo:** T-004/T-024 pedem definir "quais espécies... entram no MVP" — um recorte pequeno e deliberado é suficiente pra iniciais + primeiros encontros, sem ambição de Pokédex completa agora. Parsear o grafo de `evolution-chain` da PokéAPI é não-trivial (estrutura aninhada, múltiplos ramos) e não compensa pra um lote tão pequeno e estável de fatos já conhecidos.
+**Validado contra a API real:** o script roda contra `pokeapi.co` de verdade (não dados inventados) — tipos, sprites e official-artwork vieram de lá; só a relação de evolução é conhecimento hardcoded.
+**Implicação:** ampliar o catálogo é rodar `npm run catalog:import` de novo com mais entradas em `CURATED_SPECIES`, revisar o SQL gerado, e criar uma nova migration — nunca editar as migrations de seed já aplicadas.
+
+## 2026-10-13 — Sprites referenciados por URL (CDN da PokéAPI), não re-hospedados
+
+**Decisão:** `species_catalog.sprite_url`/`official_artwork_url` apontam para `raw.githubusercontent.com/PokeAPI/sprites` — não baixamos/re-hospedamos os bytes da imagem no Supabase Storage.
+**Motivo:** montar um pipeline de asset storage próprio (upload, CDN, invalidação) seria um salto de infraestrutura fora do escopo do T-024; o CDN da PokéAPI é público, estável e é exatamente a fonte que o Plan.md já indicava usar.
+**Mitigação do risco de link quebrado:** `SpeciesSprite` tem fallback real pra um glyph genérico (`onError`), testado explicitamente simulando falha de carregamento de imagem — satisfaz o requisito de "incluir fallback" sem precisar controlar a disponibilidade do CDN de terceiros.
+
+## 2026-10-13 — Atribuição de dados da PokéAPI
+
+**Decisão:** espécies, tipos, nomes e sprites vêm da [PokéAPI](https://pokeapi.co) (dados públicos sobre a franquia Pokémon; Pokémon é marca da Nintendo/Game Freak/Creatures Inc., não da PokéAPI nem deste projeto). Este app é de uso pessoal e privado (RNF-014, seção 1.2 do Plan.md: "o caráter privado não garante isenção de direitos autorais") — os dados/sprites não são redistribuídos como produto próprio, nem usados para fins comerciais.
+**Onde fica registrado:** este item do `DECISIONS.md` + os comentários em `scripts/import-species-catalog.ts` e na migration de seed, apontando a fonte e a data da importação.

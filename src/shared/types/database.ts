@@ -263,6 +263,53 @@ export type Database = {
         }
         Relationships: []
       }
+      species_catalog: {
+        Row: {
+          catalog_version: number
+          evolution_min_level: number | null
+          evolves_to_pokedex_number: number | null
+          imported_at: string
+          is_starter: boolean
+          name: string
+          official_artwork_url: string | null
+          pokedex_number: number
+          sprite_url: string | null
+          types: string[]
+        }
+        Insert: {
+          catalog_version?: number
+          evolution_min_level?: number | null
+          evolves_to_pokedex_number?: number | null
+          imported_at?: string
+          is_starter?: boolean
+          name: string
+          official_artwork_url?: string | null
+          pokedex_number: number
+          sprite_url?: string | null
+          types: string[]
+        }
+        Update: {
+          catalog_version?: number
+          evolution_min_level?: number | null
+          evolves_to_pokedex_number?: number | null
+          imported_at?: string
+          is_starter?: boolean
+          name?: string
+          official_artwork_url?: string | null
+          pokedex_number?: number
+          sprite_url?: string | null
+          types?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'species_catalog_evolves_to_pokedex_number_fkey'
+            columns: ['evolves_to_pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
+          },
+        ]
+      }
       tasks: {
         Row: {
           category_id: string | null

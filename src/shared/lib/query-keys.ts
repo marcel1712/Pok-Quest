@@ -39,4 +39,9 @@ export const queryKeys = {
     all: ['rewardEvents'] as const,
     list: (filters: Record<string, unknown> = {}) => ['rewardEvents', 'list', filters] as const,
   },
+  speciesCatalog: {
+    all: ['speciesCatalog'] as const,
+    list: () => ['speciesCatalog', 'list'] as const,
+    detail: (pokedexNumber: number) => ['speciesCatalog', 'detail', pokedexNumber] as const,
+  },
 }

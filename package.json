@@ -15,7 +15,8 @@
     "test:e2e": "playwright test",
     "preview": "vite preview",
     "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --linked > src/shared/types/database.ts"
+    "db:types": "supabase gen types typescript --linked > src/shared/types/database.ts",
+    "catalog:import": "tsx scripts/import-species-catalog.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
@@ -47,6 +48,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "supabase": "^2.120.0",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.69.0",
     "vite": "^8.3.0",
