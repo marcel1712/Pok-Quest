@@ -1,10 +1,90 @@
-export function TasksPage() {
+import { useState } from 'react'
+import { TaskFilterTabs } from '@/features/tasks/components/TaskFilterTabs'
+import { TaskForm } from '@/features/tasks/components/TaskForm'
+import { TaskItem } from '@/features/tasks/components/TaskItem'
+import { useCreateTask } from '@/features/tasks/hooks/use-task-mutations'
+import { useTasks } from '@/features/tasks/hooks/use-tasks'
+import { scheduleTasks, todayIsoDate } from '@/features/tasks/scheduling'
+import type { Task, TaskStatus } from '@/features/tasks/types'
+import { toFriendlyErrorMessage } from '@/shared/lib/supabase-error'
+
+function TaskGroup({ title, tasks }: { title: string; tasks: Task[] }) {
+  if (tasks.length === 0) return null
   return (
-    <section>
+    <div>
+      <h2 className="mb-2 text-sm font-semibold text-slate-400">{title}</h2>
+      <ul className="flex flex-col gap-2">
+        {tasks.map((task) => (
+          <TaskItem key={task.id} task={task} />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+export function TasksPage() {
+  const [statusFilter, setStatusFilter] = useState<TaskStatus>('pending')
+  const { data: tasks, isLoading, isError, error } = useTasks({ status: statusFilter })
+  const createTask = useCreateTask()
+
+  return (
+    <section className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-slate-100">Tarefas</h1>
-      <p className="mt-2 text-slate-400">
-        Criação, listagem e conclusão de tarefas aparecerão aqui.
-      </p>
+
+      <div className="rounded border border-slate-800 p-4">
+        <TaskForm
+          submitLabel="Adicionar tarefa"
+          pendingLabel="Adicionando…"
+          isSubmitting={createTask.isPending}
+          onSubmit={(input) => createTask.mutate(input)}
+        />
+        {createTask.isError && (
+          <p role="alert" className="mt-2 text-sm text-red-400">
+            {toFriendlyErrorMessage(createTask.error)}
+          </p>
+        )}
+      </div>
+
+      <TaskFilterTabs value={statusFilter} onChange={setStatusFilter} />
+
+      {isLoading && <p className="text-slate-400">Carregando tarefas…</p>}
+
+      {isError && (
+        <p role="alert" className="text-red-400">
+          {toFriendlyErrorMessage(error)}
+        </p>
+      )}
+
+      {tasks && tasks.length === 0 && (
+        <p className="text-slate-400">
+          {statusFilter === 'pending'
+            ? 'Nenhuma tarefa pendente. Adicione uma acima.'
+            : 'Nada por aqui ainda.'}
+        </p>
+      )}
+
+      {tasks && tasks.length > 0 && statusFilter === 'pending' && (
+        <div className="flex flex-col gap-6">
+          {(() => {
+            const schedule = scheduleTasks(tasks, todayIsoDate())
+            return (
+              <>
+                <TaskGroup title="Hoje" tasks={schedule.today} />
+                <TaskGroup title="Pendentes" tasks={schedule.overdueOrUnscheduled} />
+                <TaskGroup title="Futuras" tasks={schedule.upcoming} />
+              </>
+            )
+          })()}
+        </div>
+      )}
+
+      {tasks && tasks.length > 0 && statusFilter !== 'pending' && (
+        <ul className="flex flex-col gap-2">
+          {tasks.map((task) => (
+            <TaskItem key={task.id} task={task} />
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

@@ -1,13 +1,50 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/features/auth/store/auth-store'
 import { queryKeys } from '@/shared/lib/query-keys'
 import { createTask, updateTask } from '../api/tasks-repository'
 import { archiveTask, completeTask, reopenTask } from '../domain'
 import type { TaskInput, TaskUpdateInput } from '../schemas'
-import type { Task } from '../types'
+import type { Task, TaskUpdate } from '../types'
 
-function invalidateTasks(queryClient: ReturnType<typeof useQueryClient>) {
+function invalidateTasks(queryClient: QueryClient) {
   return queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
+}
+
+type TaskListSnapshot = ReturnType<QueryClient['getQueriesData']>
+
+function snapshotTaskLists(queryClient: QueryClient): TaskListSnapshot {
+  return queryClient.getQueriesData({ queryKey: queryKeys.tasks.all })
+}
+
+function restoreTaskLists(queryClient: QueryClient, snapshot: TaskListSnapshot) {
+  for (const [key, data] of snapshot) {
+    queryClient.setQueryData(key, data)
+  }
+}
+
+function patchTaskInLists(queryClient: QueryClient, taskId: string, patch: TaskUpdate) {
+  queryClient.setQueriesData<Task[]>({ queryKey: queryKeys.tasks.all }, (old) =>
+    old?.map((task) => (task.id === taskId ? { ...task, ...patch } : task)),
+  )
+}
+
+/** Shared optimistic-update wiring for the single-field status transitions below. */
+function useOptimisticStatusMutation(computePatch: (task: Task) => TaskUpdate) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (task: Task) => updateTask(task.id, computePatch(task)),
+    onMutate: async (task: Task) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks.all })
+      const snapshot = snapshotTaskLists(queryClient)
+      patchTaskInLists(queryClient, task.id, computePatch(task))
+      return { snapshot }
+    },
+    onError: (_error, _task, context) => {
+      if (context) restoreTaskLists(queryClient, context.snapshot)
+    },
+    onSettled: () => invalidateTasks(queryClient),
+  })
 }
 
 export function useCreateTask() {
@@ -40,28 +77,13 @@ export function useUpdateTask() {
 }
 
 export function useCompleteTask() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (task: Task) => updateTask(task.id, completeTask(task)),
-    onSuccess: () => invalidateTasks(queryClient),
-  })
+  return useOptimisticStatusMutation(completeTask)
 }
 
 export function useReopenTask() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (task: Task) => updateTask(task.id, reopenTask(task)),
-    onSuccess: () => invalidateTasks(queryClient),
-  })
+  return useOptimisticStatusMutation(reopenTask)
 }
 
 export function useArchiveTask() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (task: Task) => updateTask(task.id, archiveTask(task)),
-    onSuccess: () => invalidateTasks(queryClient),
-  })
+  return useOptimisticStatusMutation(archiveTask)
 }
