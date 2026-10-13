@@ -136,3 +136,21 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Decisão:** `toZonedDateString()` usa `Intl.DateTimeFormat('en-CA', { timeZone, ... })` para obter o `YYYY-MM-DD` de um timestamp UTC no fuso **salvo no perfil** do usuário — não `Date.getFullYear()`/`getMonth()`/`getDate()` (que usam o fuso do dispositivo rodando o código).
 **Motivo:** RNF-013 exige consistência de fuso nos agrupamentos; usar o fuso do dispositivo quebraria ao acessar de outro computador/fuso. `profiles.timezone` (default `'UTC'`) agora tem uma UI para ajustar (`TimezoneSettings`, botão "usar fuso deste navegador").
 **Nota de inconsistência conhecida:** `src/features/tasks/scheduling.ts` (`todayIsoDate()`, usado para separar tarefas em Hoje/Pendentes/Futuras no T-012) ainda usa o fuso local do dispositivo, não `profiles.timezone`. Não corrigi isso agora porque está fora do escopo do T-020 (é sobre tarefas, não foco) — fica registrado aqui como pendência para quando alguém tocar em agrupamento de tarefas por data de novo.
+
+## 2026-10-13 — T-003 (regras do jogo) feito junto com o T-021 (motor), não antes
+
+**Decisão:** `docs/GAME_RULES.md` foi escrito na mesma sessão que `src/features/battles/engine.ts`, em vez de ser um documento isolado produzido muito antes do código (como a Fase 0 do Plan.md sugeria).
+**Motivo:** escrever a matemática do jogo em abstrato, sem nenhum código real pra validar contra, tinha alto risco de ficar bonito no papel e errado na prática (unidades inconsistentes, casos de borda esquecidos). Fazer os dois juntos, com os exemplos verificáveis do doc virando os testes do motor **linha por linha**, garante que o documento descreve o que o código realmente faz.
+**Implicação:** qualquer mudança futura nas constantes/fórmulas deve atualizar os dois arquivos juntos — o doc não é uma referência "histórica", é a especificação viva.
+
+## 2026-10-13 — XP de bônus de batalha é só um número hoje; não há onde persistir ainda
+
+**Decisão:** `resolveBattle()` e todo `src/features/battles/engine.ts` são funções puras, sem nenhuma tabela `battles`/`battle_commitments` por trás. Nada na UI chama esse motor ainda.
+**Motivo:** persistir resultado de batalha com integridade transacional (RNF-006: "o cliente nunca é fonte confiável do próprio XP") exige a RPC/transação do T-022, que ainda não existe. Implementar o motor primeiro, puro e bem testado, e só depois construir a casca transacional em volta dele, é mais seguro do que tentar os dois ao mesmo tempo.
+**Implicação:** T-022 vai chamar essas funções exportadas (`getViableCommitments`, `resolveBattle`, etc.) dentro de uma RPC/Edge Function, não reimplementar a lógica em SQL.
+
+## 2026-10-13 — `PartySnapshot` simplificado a `averageLevel`, sem tipos elementais
+
+**Decisão:** o motor de batalha considera só o nível médio do time para o multiplicador de XP e a redução de dificuldade — nenhuma vantagem/desvantagem de tipo (fogo vs. água etc.).
+**Motivo:** o catálogo de Pokémon com tipos (T-024) não existe ainda; modelar vantagem elemental sem dados reais de tipo seria adivinhação. RF-027 só pede "mostrar como a força do time modifica facilidade e recompensas" — nível médio já cumpre isso de forma auditável.
+**Implicação:** se tipos elementais forem adicionados depois, o multiplicador pode ganhar um fator extra sem quebrar a assinatura de `PartySnapshot` (é só adicionar campos opcionais).
