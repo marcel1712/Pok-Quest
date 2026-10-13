@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { signOut } from '@/features/auth/api/auth'
 
 const navItems = [
   { to: '/', label: 'Dashboard' },
@@ -13,7 +14,7 @@ export function RootLayout() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="border-b border-slate-800">
-        <nav className="flex gap-4 overflow-x-auto px-4 py-3 text-sm">
+        <nav className="flex items-center gap-4 overflow-x-auto px-4 py-3 text-sm">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -26,6 +27,13 @@ export function RootLayout() {
               {item.label}
             </NavLink>
           ))}
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="ml-auto text-slate-400 hover:text-slate-200"
+          >
+            Sair
+          </button>
         </nav>
       </header>
       <main className="px-4 py-6">
