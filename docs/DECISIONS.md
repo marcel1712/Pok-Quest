@@ -268,3 +268,17 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Decisão:** o usuário recebeu um Chimchar diretamente via `insert` no banco, não pela captura normal — porque não existe nenhum fluxo de escolha de inicial ainda (T-029, Fase 5, não construído).
 **Motivo:** o usuário pediu explicitamente ("preciso que você me dê algum pokémon pra testar"), e sem um Pokémon nenhuma feature de time/evolução pode ser testada manualmente.
 **Implicação:** isso não é uma captura real (não existe linha em `captures`, não passou pelo `capture_from_battle`) — é só um dado de teste. Quando o T-029 existir, ele vai lidar com a escolha real do inicial; esse Chimchar manual não precisa ser removido nem migrado, é só mais um Pokémon na coleção do usuário como outro qualquer.
+
+## 2026-10-13 — Curva de XP validada por simulação, não só por fórmula
+
+**Decisão:** depois que o teste manual do T-026 pareceu "lento" (nível 13→14 exigindo 547 XP, levando a crer que havia um bug), investiguei e confirmei que **não havia bug** — o ganho real por batalha estava correto (2197→2207 em 3 batalhas pequenas). O problema era de expectativa, não de código: sessões de 1-3 min (ajustadas só pra teste rápido) rendem pouquíssimo XP, e a curva cúbica tem saltos grandes entre níveis.
+**Validação feita:** escrevi simulações de uso realista (`balance-simulation.test.ts`) com um perfil moderado (2 tarefas + 1 sessão de 30 min/dia, nada de sessões de 1 min) — 7 dias ≈ nível 9, 30 dias ≈ nível 15, 90 dias ≈ nível 22. Isso parece uma progressão razoável pra um app de produtividade de uso diário real; a curva **não foi alterada**.
+**Lição:** antes de decidir "a curva está errada" a partir de um teste manual, simular o uso realista primeiro — testes manuais rápidos (sessões de 1 min, poucas iterações) não são representativos do ritmo real de acumulação de XP.
+
+## 2026-10-13 — Anti-fracionamento de tarefas (T-027): retornos decrescentes diários, não um limite rígido
+
+**Decisão:** as primeiras 5 tarefas recompensadas no dia rendem XP cheio; a partir da 6ª, metade (`TASK_XP_DIMINISHED_MULTIPLIER = 0.5`). Não é um corte total (zero XP) nem um limite de quantidade de tarefas que pode ser concluída — só o bônus de XP diminui.
+**Motivo:** um corte rígido ("só as 5 primeiras tarefas contam") puniria dias genuinamente produtivos com mais de 5 tarefas reais; retornos decrescentes desincentivam especificamente o **fracionamento artificial** (quebrar uma tarefa grande em várias pequenas, ou spammar tarefas triviais) sem penalizar produtividade real. Sessões de foco não precisam dessa proteção — o XP já é linear nos minutos reais, fracionar uma sessão longa em várias curtas rende o mesmo total.
+**Implementado em dois lugares:** `applyDailyTaskDiminishingReturns()` em TypeScript (pura, recebe a contagem como parâmetro, testável sem banco) e replicada em `resolve_pending_battle` (SQL, onde a contagem real de tarefas recompensadas hoje é calculada) — mesma duplicação já aceita para as outras fórmulas do motor.
+**Validado contra o banco real:** script que completa 6 tarefas triviais em sequência confirma 20 XP para as 5 primeiras, 10 XP pra sexta — `supabase/verification/t027-task-anti-fractionation.sql`, zero resíduo.
+**Pendência conhecida:** como `TasksPage` ainda não oferece vincular um encontro a uma tarefa (decisão do T-023), esse caminho de recompensa — e, portanto, esse mecanismo anti-abuso — não é alcançável pela UI real ainda. Fica validado e pronto para quando essa integração existir.

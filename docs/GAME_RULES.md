@@ -123,11 +123,42 @@ Esses exemplos são portados 1:1 para `engine.test.ts`.
 ## Prevenção de exploração
 
 - O XP de bônus depende da `CommitmentFulfillment`, que só existe depois que a tarefa/sessão real já foi concluída pelo pipeline existente (T-011/T-019) — não há como chamar o motor sem uma conclusão real por trás.
-- `resolveBattle` é uma função pura, sem efeito colateral: não decide por si só se uma tarefa foi concluída ou se uma sessão foi confirmada, apenas recebe o fato consumado. A prevenção de XP duplicado continua sendo responsabilidade do ledger `productivity_events` (idempotente desde o T-013); o T-022 vai decidir como amarrar "um resultado de batalha" a "um evento de produtividade" sem permitir recálculo do mesmo evento mais de uma vez.
+- `resolveBattle` é uma função pura, sem efeito colateral: não decide por si só se uma tarefa foi concluída ou se uma sessão foi confirmada, apenas recebe o fato consumado. A prevenção de XP duplicado é responsabilidade do ledger `productivity_events`/`reward_events` (idempotente desde o T-013; amarrado a "um resultado de batalha" desde o T-022).
 - Reabrir uma tarefa e concluí-la de novo gera um novo evento de produtividade (decisão já registrada em `docs/DECISIONS.md`) e, consequentemente, pode gerar um novo resultado de batalha — isso é aceitável porque é um novo "ato" real, não uma repetição da mesma requisição.
+
+### Anti-fracionamento de tarefas (T-027)
+
+```
+TASK_XP_FULL_REWARD_COUNT_PER_DAY = 5    // primeiras 5 tarefas recompensadas no dia, XP cheio
+TASK_XP_DIMINISHED_MULTIPLIER     = 0.5  // a partir da 6ª, metade do XP
+
+applyDailyTaskDiminishingReturns(baseXp, tarefasRecompensadasHoje):
+  return tarefasRecompensadasHoje >= TASK_XP_FULL_REWARD_COUNT_PER_DAY
+    ? baseXp * TASK_XP_DIMINISHED_MULTIPLIER
+    : baseXp
+```
+
+**Só tarefas, nunca sessões de foco.** O XP de uma sessão de foco já é linear nos minutos reais (`duração * FOCUS_XP_PER_MINUTE`) — fracionar uma sessão de 30 min em três de 10 min rende exatamente o mesmo total, não há nada a explorar. Tarefas pagam um valor fixo por conclusão independente do esforço real, então são o único lugar onde espalhar trabalho em tarefas artificiais/triviais paga mais do que devia, sem esse mecanismo.
+
+**Contagem:** quantos eventos de recompensa com `source_type='battle'` e `commitment_type='task'` já foram creditados hoje (granularidade de dia UTC, não o fuso do perfil — simplificação aceita pra esse controle anti-abuso específico, diferente da exigência mais estrita do RNF-013 pra agrupamentos visíveis ao usuário). Calculada só no trigger SQL (`resolve_pending_battle`), já que depende de estado; a função pura do TS (`applyDailyTaskDiminishingReturns`) recebe essa contagem como parâmetro, não a calcula.
+
+**Exemplo:** 5 tarefas dificuldade 1 em um dia = 5×20 = 100 XP, igual a uma única tarefa dificuldade 5 (5×20=100) — nenhuma penalidade por fazer tarefas pequenas legítimas. Uma 6ª tarefa no mesmo dia rende só 10 XP (metade), não 20 — tentar fracionar além disso rende cada vez menos por unidade.
+
+## Simulação de uso realista (T-027)
+
+`src/features/battles/balance-simulation.test.ts` simula um perfil moderado (2 tarefas dificuldade 2 + uma sessão de foco de 30 min por dia, sem fracionamento, XP todo pra um único Pokémon — dividir entre até 6 deixaria o nível individual proporcionalmente mais lento, uma consequência aceita e documentada em `docs/DECISIONS.md`):
+
+| Horizonte | XP total aproximado | Nível alcançado |
+| --------- | ------------------- | --------------- |
+| 7 dias    | ~875                | ~9              |
+| 30 dias   | ~3.750              | ~15             |
+| 90 dias   | ~11.250             | ~22             |
+
+Nenhum desses fica parado no nível inicial, e 90 dias de uso real não chega nem perto do teto (100) — nem precisa, porque o jogo não tem "fim" definido ainda (Fase 5+). Um dia sem nenhuma atividade soma 0 XP, nunca negativo — sem penalidade por ausência (CA do T-027).
 
 ## O que fica fora do T-021
 
 - Não existe ainda `battles`/`battle_commitments` persistidos (essa é uma decisão explícita do T-016: Pomodoro funciona sem a camada de RPG). O motor é só funções puras em memória por enquanto.
 - Não existe catálogo de Pokémon/tipos/vantagem elemental (T-024) — `PartySnapshot` é deliberadamente simplificado a `averageLevel`, sem tipos nem matchups.
-- `TASK_XP_PER_DIFFICULTY`, `FOCUS_XP_PER_MINUTE`, etc. são constantes TypeScript, não uma tabela `game_settings` versionada no banco — ver `docs/DECISIONS.md`.
+- `TASK_XP_PER_DIFFICULTY`, `FOCUS_XP_PER_MINUTE`, etc. são constantes TypeScript, não uma tabela `game_settings` versionada no banco — ver `docs/DECISIONS.md`. `REWARD_RULES_VERSION` (hoje `1`) é um marcador de "essas constantes mudaram" pra humanos, não uma trava de código — eventos de recompensa já gravam seu `amount` final, então uma mudança de constante nunca corrompe recompensas passadas (T-027).
+- `TasksPage` ainda não oferece nenhum jeito de vincular um encontro a uma tarefa (decisão do T-023) — então, na prática hoje, o caminho de recompensa de tarefa só é alcançável via dados de teste direto no banco, não pela UI real. O anti-fracionamento e as simulações deste documento já cobrem esse caminho preventivamente, pra quando essa integração existir.

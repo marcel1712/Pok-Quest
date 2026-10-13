@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyDailyTaskDiminishingReturns,
   computeEffectiveDifficulty,
   computeTeamMultiplier,
   getViableCommitments,
   isCommitmentSatisfied,
   resolveBattle,
+  TASK_XP_FULL_REWARD_COUNT_PER_DAY,
 } from './engine'
-import type { Commitment, Encounter, PartySnapshot } from './types'
+import type { Commitment, CommitmentFulfillment, Encounter, PartySnapshot } from './types'
 
 const noParty: PartySnapshot = { averageLevel: 0 }
 const strongParty: PartySnapshot = { averageLevel: 50 }
@@ -194,4 +196,83 @@ describe('resolveBattle — property: meeting the exact shown commitment always 
       expect(focusOutcome.result).toBe('victory')
     },
   )
+})
+
+describe('applyDailyTaskDiminishingReturns', () => {
+  it('leaves the first few daily task rewards at full value', () => {
+    for (let prior = 0; prior < TASK_XP_FULL_REWARD_COUNT_PER_DAY; prior++) {
+      expect(applyDailyTaskDiminishingReturns(100, prior)).toBe(100)
+    }
+  })
+
+  it('halves task XP once the daily full-reward count is reached', () => {
+    expect(applyDailyTaskDiminishingReturns(100, TASK_XP_FULL_REWARD_COUNT_PER_DAY)).toBe(50)
+    expect(applyDailyTaskDiminishingReturns(100, TASK_XP_FULL_REWARD_COUNT_PER_DAY + 50)).toBe(50)
+  })
+})
+
+describe('resolveBattle — anti-fractionation (T-027)', () => {
+  it('does not diminish focus-session XP regardless of how many battles happened today', () => {
+    // Linear-in-time reward: splitting one long session into many short ones nets the
+    // same total XP either way, so there is nothing to diminish here.
+    const commitment: Commitment = { type: 'focusSession', minDurationMinutes: 10 }
+    const outcome = resolveBattle(
+      commitment,
+      { type: 'focusSession', durationMinutes: 10, wasConfirmed: true },
+      noParty,
+      999, // even with hundreds of "prior" rewards today
+    )
+    expect(outcome.xpAwarded).toBe(15) // 10 * FOCUS_XP_PER_MINUTE, unaffected
+  })
+
+  it('diminishes task XP after the daily full-reward count, discouraging microtask spam', () => {
+    const commitment: Commitment = { type: 'task', minDifficulty: 1 }
+    const fulfillment: CommitmentFulfillment = { type: 'task', difficulty: 1 }
+
+    const fullReward = resolveBattle(commitment, fulfillment, noParty, 0)
+    const diminishedReward = resolveBattle(
+      commitment,
+      fulfillment,
+      noParty,
+      TASK_XP_FULL_REWARD_COUNT_PER_DAY,
+    )
+
+    expect(fullReward.xpAwarded).toBe(20)
+    expect(diminishedReward.xpAwarded).toBe(10)
+    expect(diminishedReward.xpAwarded).toBeLessThan(fullReward.xpAwarded)
+  })
+
+  it('splitting one difficulty-5 task into five difficulty-1 tasks nets strictly less XP than doing the real thing', () => {
+    const bigTask = resolveBattle(
+      { type: 'task', minDifficulty: 5 },
+      { type: 'task', difficulty: 5 },
+      noParty,
+      0,
+    )
+
+    const fiveSmallTasks = Array.from(
+      { length: 5 },
+      (_, i) =>
+        resolveBattle(
+          { type: 'task', minDifficulty: 1 },
+          { type: 'task', difficulty: 1 },
+          noParty,
+          i, // each one is "today's Nth" prior reward
+        ).xpAwarded,
+    ).reduce((sum, xp) => sum + xp, 0)
+
+    // Equal *while* still under the daily cap (5 * 20 = 100 = 5 * 20) — the point of
+    // this mechanism isn't to punish 5 legitimate small tasks, only spam beyond that.
+    expect(fiveSmallTasks).toBe(bigTask.xpAwarded)
+
+    // A 6th fractioned task on top gains only half — fractionation past the cap is a
+    // worse deal than it would be without the mechanism (100% -> 50% marginal value).
+    const sixthSmallTask = resolveBattle(
+      { type: 'task', minDifficulty: 1 },
+      { type: 'task', difficulty: 1 },
+      noParty,
+      5,
+    ).xpAwarded
+    expect(sixthSmallTask).toBe(10)
+  })
 })
