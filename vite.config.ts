@@ -16,5 +16,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/shared/lib/test-setup.ts',
+    // Playwright owns tests/e2e; keep Vitest scoped to unit/component tests.
+    exclude: ['node_modules/**', 'tests/e2e/**'],
   },
 })

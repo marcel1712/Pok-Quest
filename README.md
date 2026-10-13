@@ -30,6 +30,7 @@ npm run dev
 | `npm run typecheck`    | TypeScript sem emitir arquivos                                    |
 | `npm run test`         | Vitest (execução única)                                           |
 | `npm run test:watch`   | Vitest (modo watch)                                               |
+| `npm run test:e2e`     | Playwright (sobe o dev server automaticamente)                    |
 | `npm run preview`      | servir o build de produção localmente                             |
 | `npm run db:push`      | aplica migrations locais no projeto Supabase linkado              |
 | `npm run db:types`     | regenera `src/shared/types/database.ts` a partir do schema remoto |
@@ -57,3 +58,7 @@ src/
 ```
 
 Regra de dependência: `pages → features → shared`.
+
+## Testes e CI
+
+Ver `docs/QA.md` para convenções completas. Resumo: GitHub Actions (`.github/workflows/ci.yml`) roda lint, typecheck, Vitest, build e um smoke E2E não-autenticado em todo push/PR, sem usar credenciais reais. E2E autenticado roda apenas local (`npm run test:e2e`) com o `.env` real, por enquanto.
