@@ -63,6 +63,56 @@ export type Database = {
         }
         Relationships: []
       }
+      focus_sessions: {
+        Row: {
+          accumulated_pause_seconds: number
+          created_at: string
+          ended_at: string | null
+          id: string
+          owner_id: string
+          paused_at: string | null
+          planned_duration_seconds: number
+          started_at: string
+          status: string
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          accumulated_pause_seconds?: number
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          owner_id: string
+          paused_at?: string | null
+          planned_duration_seconds: number
+          started_at?: string
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accumulated_pause_seconds?: number
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          owner_id?: string
+          paused_at?: string | null
+          planned_duration_seconds?: number
+          started_at?: string
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'focus_sessions_task_id_fkey'
+            columns: ['task_id']
+            isOneToOne: false
+            referencedRelation: 'tasks'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       productivity_events: {
         Row: {
           created_at: string

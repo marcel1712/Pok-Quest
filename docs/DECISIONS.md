@@ -58,3 +58,26 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Reabrir e concluir de novo:** é tratado como um **novo episódio de conclusão legítimo** (gera um novo evento, já que `occurred_at` — o `completed_at` daquela conclusão — é diferente do anterior). Não há reversão automática de recompensas já concedidas ao reabrir (ainda não existem recompensas — isso é T-021+); se uma política de reversão for necessária depois, ela precisa ser decidida explicitamente, não inferida daqui.
 **Validado:** rodei um script SQL (`supabase db query --linked`) direto no banco real, criando e removendo uma tarefa descartável, confirmando: 1 evento após a primeira conclusão, ainda 1 evento após uma conclusão duplicada ("retry"/duas abas), 2 eventos após reabrir e concluir de novo. Nenhum resíduo ficou no banco.
 **Pendência:** não há teste automatizado desse comportamento no Vitest (exigiria Postgres real; não há Docker/ambiente local — ver decisão "Ambiente único" acima). O script fica versionado em `supabase/verification/t013-completion-idempotency.sql` — roda com `npx supabase db query --linked -f supabase/verification/t013-completion-idempotency.sql` sempre que o gatilho for alterado.
+
+## 2026-10-13 — `awaiting_confirmation` (T-016) é um estado derivado, não uma coluna persistida
+
+**Decisão:** `focus_sessions.status` só guarda `running`/`paused`/`completed`/`cancelled`. O estado "tempo esgotado, esperando confirmação" (RF-016) é **calculado** no cliente a partir de `started_at`/`paused_at`/`accumulated_pause_seconds`/`planned_duration_seconds` (`getSessionPhase()` em `src/features/focus/domain.ts`), não escrito no banco.
+**Motivo:** evita uma viagem ao servidor só para marcar "o relógio chegou a zero" — isso é puramente uma questão de apresentação/tempo, que já é derivável dos timestamps já persistidos (RF-015 exige cálculo via timestamps, não ticks). Uma sessão pausada que já passou do tempo planejado permanece `paused` (não pula para `awaiting_confirmation`) porque pausar foi uma ação explícita do usuário.
+**Implicação:** `confirmSession()` recalcula a fase a partir do estado persistido e **rejeita** a confirmação se `awaiting_confirmation` não for a fase atual — isso é o que impede uma "vitória implícita" (RF-016) mesmo que a UI tente confirmar antes da hora.
+
+## 2026-10-13 — Pausa de sessão (RF-014) ≠ descanso entre ciclos (RF-018)
+
+**Decisão:** `focus_sessions.paused_at`/`accumulated_pause_seconds` modelam só o botão "pausar" dentro de uma sessão ativa (RF-014). O descanso clássico do Pomodoro entre um foco e o próximo (RF-018, presets 5/10/15 min) é um conceito separado, ainda não modelado — fica para o T-020.
+**Motivo:** o Plan.md usa "pausa" para as duas coisas em português; sem essa distinção explícita, o schema correria risco de confundir os dois.
+
+## 2026-10-13 — Limites de duração do Pomodoro (T-016)
+
+**Decisão:** `planned_duration_seconds` aceita de 60 (1 min) a 7200 (2h) na constraint do banco.
+**Motivo:** RF-013 pede "limites razoáveis" sem definir números; a tabela de propostas (seção 2.2) sugere presets 25/30/45/60 min como _UI_ (ainda não construída — T-018/T-020), não como limite rígido. O teto de 2h segue o princípio de seção 5.1.5 ("não exigir Pomodoros de horas"); o piso de 1 min permite sessões de teste/custom curtas sem abrir a porta para sessões de duração ~0.
+**Implicação:** os presets da UI (T-018) vão ficar bem dentro desses limites; não há necessidade de alterar a constraint ao implementá-los.
+
+## 2026-10-13 — Vínculo com batalha/encontro (RF-017) deferido para a Fase 4
+
+**Decisão:** `focus_sessions` tem `task_id` (opcional, nullable) mas **não** tem nenhuma coluna para vincular a um encontro/batalha ainda.
+**Motivo:** as tabelas `battles`/`battle_commitments` não existem (Fase 4 do backlog). RF-017 descreve o vínculo a um "encontro/desafio" como esperado, mas os objetivos do produto (seção 1.1, item 3: "permitir sessões de foco sem precisar interagir com o jogo") e os princípios de seção 5.1 confirmam que o Pomodoro tem que funcionar de forma independente da camada de RPG.
+**Implicação:** quando a Fase 4 criar `battles`, uma migration nova adiciona uma coluna `battle_id` nullable a `focus_sessions` — não é uma mudança destrutiva.
