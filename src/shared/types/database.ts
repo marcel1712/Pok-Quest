@@ -49,6 +49,7 @@ export type Database = {
           status: string
           task_id: string | null
           team_multiplier_applied: number | null
+          wild_species_pokedex_number: number | null
         }
         Insert: {
           commitment_min_difficulty?: number | null
@@ -65,6 +66,7 @@ export type Database = {
           status?: string
           task_id?: string | null
           team_multiplier_applied?: number | null
+          wild_species_pokedex_number?: number | null
         }
         Update: {
           commitment_min_difficulty?: number | null
@@ -81,6 +83,7 @@ export type Database = {
           status?: string
           task_id?: string | null
           team_multiplier_applied?: number | null
+          wild_species_pokedex_number?: number | null
         }
         Relationships: [
           {
@@ -96,6 +99,62 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'tasks'
             referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'battles_wild_species_pokedex_number_fkey'
+            columns: ['wild_species_pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
+          },
+        ]
+      }
+      captures: {
+        Row: {
+          battle_id: string
+          created_at: string
+          id: string
+          owned_pokemon_id: string | null
+          owner_id: string
+          pokedex_number: number
+        }
+        Insert: {
+          battle_id: string
+          created_at?: string
+          id?: string
+          owned_pokemon_id?: string | null
+          owner_id: string
+          pokedex_number: number
+        }
+        Update: {
+          battle_id?: string
+          created_at?: string
+          id?: string
+          owned_pokemon_id?: string | null
+          owner_id?: string
+          pokedex_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'captures_battle_id_fkey'
+            columns: ['battle_id']
+            isOneToOne: true
+            referencedRelation: 'battles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'captures_owned_pokemon_id_fkey'
+            columns: ['owned_pokemon_id']
+            isOneToOne: false
+            referencedRelation: 'owned_pokemon'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'captures_pokedex_number_fkey'
+            columns: ['pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
           },
         ]
       }
@@ -176,6 +235,53 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'tasks'
             referencedColumns: ['id']
+          },
+        ]
+      }
+      owned_pokemon: {
+        Row: {
+          captured_at: string
+          created_at: string
+          id: string
+          level: number
+          nickname: string | null
+          owner_id: string
+          party_position: number | null
+          pokedex_number: number
+          updated_at: string
+          xp: number
+        }
+        Insert: {
+          captured_at?: string
+          created_at?: string
+          id?: string
+          level?: number
+          nickname?: string | null
+          owner_id: string
+          party_position?: number | null
+          pokedex_number: number
+          updated_at?: string
+          xp?: number
+        }
+        Update: {
+          captured_at?: string
+          created_at?: string
+          id?: string
+          level?: number
+          nickname?: string | null
+          owner_id?: string
+          party_position?: number | null
+          pokedex_number?: number
+          updated_at?: string
+          xp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'owned_pokemon_pokedex_number_fkey'
+            columns: ['pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
           },
         ]
       }
@@ -365,6 +471,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      capture_from_battle: {
+        Args: { p_battle_id: string }
+        Returns: {
+          captured_at: string
+          created_at: string
+          id: string
+          level: number
+          nickname: string | null
+          owner_id: string
+          party_position: number | null
+          pokedex_number: number
+          updated_at: string
+          xp: number
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'owned_pokemon'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       resolve_pending_battle: {
         Args: {
           p_focus_session_id: string
@@ -373,6 +500,10 @@ export type Database = {
           p_owner_id: string
           p_task_id: string
         }
+        Returns: undefined
+      }
+      swap_party_positions: {
+        Args: { p_pokemon_a: string; p_pokemon_b: string }
         Returns: undefined
       }
     }

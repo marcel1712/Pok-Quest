@@ -92,6 +92,7 @@ function makeBattle(overrides: Partial<Battle> = {}): Battle {
     status: 'pending',
     result: null,
     team_multiplier_applied: null,
+    wild_species_pokedex_number: null,
     created_at: new Date().toISOString(),
     resolved_at: null,
     ...overrides,

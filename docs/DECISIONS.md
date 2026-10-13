@@ -209,3 +209,22 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 
 **Decisão:** espécies, tipos, nomes e sprites vêm da [PokéAPI](https://pokeapi.co) (dados públicos sobre a franquia Pokémon; Pokémon é marca da Nintendo/Game Freak/Creatures Inc., não da PokéAPI nem deste projeto). Este app é de uso pessoal e privado (RNF-014, seção 1.2 do Plan.md: "o caráter privado não garante isenção de direitos autorais") — os dados/sprites não são redistribuídos como produto próprio, nem usados para fins comerciais.
 **Onde fica registrado:** este item do `DECISIONS.md` + os comentários em `scripts/import-species-catalog.ts` e na migration de seed, apontando a fonte e a data da importação.
+
+## 2026-10-13 — Segunda lição sobre grants: `PUBLIC` é diferente de `anon`/`authenticated`
+
+**O que aconteceu:** `capture_from_battle`/`swap_party_positions` (T-025) vieram, na criação, com um grant de `EXECUTE` pro papel `PUBLIC` — distinto dos grants individuais por papel (`anon`, `authenticated`) que vi no T-022. Um `revoke ... from anon` sozinho **não** removeria esse acesso, porque `PUBLIC` é um grant guarda-chuva que se aplica a todo papel independentemente de grants individuais.
+**Por que não foi um incidente de verdade:** testei com `curl` usando a `anon` key antes de seguir adiante (lição do T-022 aplicada) — a chamada foi aceita (sem erro de permissão), mas retornou "Batalha não encontrada" sem nenhum efeito, porque as duas funções filtram tudo por `owner_id = auth.uid()`, que é `null` pra uma requisição anônima. Então, diferente do `resolve_pending_battle` (que confiava em parâmetros forjáveis), essas funções são seguras _mesmo com_ `EXECUTE` amplo — mas eu revoguei de `PUBLIC` mesmo assim, por defesa em profundidade e pra não depender só desse raciocínio.
+**Lição combinada com a do T-022:** antes de considerar uma função `SECURITY DEFINER` (ou qualquer RPC sensível) seguramente restrita, checar a lista completa de `grantee` em `information_schema.routine_privileges` — não assumir que revogar de `anon`/`authenticated` cobre `PUBLIC`, nem o contrário — e sempre testar com `curl`/anon key como prova final, não só a leitura da tabela de grants.
+
+## 2026-10-13 — Rollback automático do PL/pgSQL evita Pokémon órfão em corrida de captura
+
+**Decisão:** `capture_from_battle` insere em `owned_pokemon` e depois em `captures` dentro do mesmo bloco `begin...exception`; se a segunda inserção falhar por `unique_violation` (a mesma batalha já foi capturada por uma requisição concorrente), o handler de exceção devolve o Pokémon do vencedor da corrida — sem precisar de limpeza manual.
+**Por que isso não deixa um Pokémon "fantasma":** no PL/pgSQL, uma `EXCEPTION` associada a um bloco desfaz **todo** o trabalho feito desde o início daquele bloco (como um savepoint implícito), não só a instrução que falhou — então o `insert` em `owned_pokemon` da requisição perdedora é revertido automaticamente junto com o `insert` em `captures` que falhou.
+**Validado:** script de verificação (`supabase/verification/t025-capture-and-party.sql`) confirma que capturar a mesma batalha duas vezes retorna o **mesmo** `owned_pokemon.id` e deixa exatamente uma linha em `owned_pokemon`/`captures`.
+
+## 2026-10-13 — Troca de posição no time via RPC, não três chamadas separadas do cliente
+
+**Decisão:** `swap_party_positions` troca as posições de dois Pokémon dentro de uma função `SECURITY INVOKER` (três `UPDATE`s em sequência: libera a posição de A, move B pra posição antiga de A, move A pra posição antiga de B), em vez de três chamadas separadas do cliente JS.
+**Motivo:** o índice único parcial em `(owner_id, party_position)` rejeitaria um `UPDATE` que tentasse colocar dois Pokémon na mesma posição, mesmo que momentaneamente — três chamadas de rede separadas do cliente arriscam deixar a troca pela metade se a conexão cair entre uma e outra. Uma função só, com as três etapas na mesma transação implícita, é atômica.
+**Por que `SECURITY INVOKER`, não `DEFINER`:** RLS em `owned_pokemon` já restringe cada `UPDATE` ao próprio dono (`owner_id = auth.uid()`); não há nada sensível o suficiente aqui pra justificar rodar como um papel privilegiado — ao contrário de `resolve_pending_battle`/`capture_from_battle`, que decidem crédito de XP/criação de Pokémon.
+**Validado:** script de verificação confirma que trocar dois Pokémon de posição (incluindo box↔time) produz o resultado esperado sem violar a constraint de posição única.
