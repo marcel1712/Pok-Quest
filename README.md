@@ -20,17 +20,31 @@ npm run dev
 
 ## Scripts
 
-| Script | Descrição |
-|---|---|
-| `npm run dev` | servidor de desenvolvimento |
-| `npm run build` | typecheck + build de produção |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier (escreve) |
-| `npm run format:check` | Prettier (somente verifica) |
-| `npm run typecheck` | TypeScript sem emitir arquivos |
-| `npm run test` | Vitest (execução única) |
-| `npm run test:watch` | Vitest (modo watch) |
-| `npm run preview` | servir o build de produção localmente |
+| Script                 | Descrição                                                         |
+| ---------------------- | ----------------------------------------------------------------- |
+| `npm run dev`          | servidor de desenvolvimento                                       |
+| `npm run build`        | typecheck + build de produção                                     |
+| `npm run lint`         | ESLint                                                            |
+| `npm run format`       | Prettier (escreve)                                                |
+| `npm run format:check` | Prettier (somente verifica)                                       |
+| `npm run typecheck`    | TypeScript sem emitir arquivos                                    |
+| `npm run test`         | Vitest (execução única)                                           |
+| `npm run test:watch`   | Vitest (modo watch)                                               |
+| `npm run preview`      | servir o build de produção localmente                             |
+| `npm run db:push`      | aplica migrations locais no projeto Supabase linkado              |
+| `npm run db:types`     | regenera `src/shared/types/database.ts` a partir do schema remoto |
+
+## Banco de dados (Supabase)
+
+Projeto único (dev = prod, app pessoal de um usuário). CLI já linkado via `supabase link --project-ref <ref>`.
+
+```bash
+npx supabase migration new <nome>   # cria uma nova migration
+npm run db:push                     # aplica migrations pendentes no remoto
+npm run db:types                    # atualiza os tipos TS do schema
+```
+
+Migrations ficam em `supabase/migrations/`, versionadas no Git. Nenhuma credencial fica no repositório — apenas em `.env` (ignorado).
 
 ## Estrutura
 

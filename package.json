@@ -12,7 +12,9 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:push": "supabase db push",
+    "db:types": "supabase gen types typescript --linked > src/shared/types/database.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
@@ -41,6 +43,7 @@
     "jsdom": "^28.1.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "supabase": "^2.120.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.69.0",
