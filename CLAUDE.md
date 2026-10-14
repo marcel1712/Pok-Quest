@@ -9,7 +9,8 @@ Pokémon-inspired journey: tasks and focus sessions trigger battle "encounters" 
 and evolve owned Pokémon. Full requirements, architecture and the phased backlog (task IDs `T-001`…`T-040+`)
 live in `Plan.md` — read it before starting a new backlog task. Design decisions, trade-offs and security
 findings are logged (dated, in Portuguese) in `docs/DECISIONS.md`; game-balance formulas and worked examples
-are in `docs/GAME_RULES.md`; test conventions are in `docs/QA.md`.
+are in `docs/GAME_RULES.md`; test conventions are in `docs/QA.md`; the security model and incident
+procedures are in `docs/SECURITY.md`.
 
 Stack: React 19 + Vite + TypeScript (strict), Tailwind CSS v4, React Router, TanStack Query, Zustand, Zod,
 Supabase (Auth + PostgreSQL + RLS).
@@ -95,12 +96,16 @@ conventions:
 - Reward/XP mutations to `owned_pokemon` are restricted via **column-level** `GRANT UPDATE (...)`, not just
   row-level RLS — RLS alone only filters _rows_, not _columns_, so it does not stop a user from PATCHing
   their own row's `xp`/`level` directly.
-- Function `EXECUTE` grants must be checked per role explicitly (`anon`, `authenticated`, and `PUBLIC` are
-  three independent grants in `information_schema.routine_privileges`/`column_privileges`) — Supabase's
-  defaults for new functions are inconsistent, and forgetting to revoke from `anon` has been a real,
-  fixed vulnerability here more than once. Functions declared `returns trigger` can't be called directly
-  via RPC (Postgres rejects the calling convention) and are safe by construction; plain-return functions
-  are not.
+- **Grants are deny-by-default.** The default privileges of schema `public` were changed (T-038): a table
+  or function created by a new migration starts with NO access for `anon`/`authenticated`. Every migration
+  must `grant` exactly what the client needs (usually `grant select ... to authenticated`, plus
+  `insert`/`update` only for the user's own working data, and `grant execute` only on RPCs the app calls).
+  `anon` gets nothing in `public`. RLS, table grants and column grants are three independent layers —
+  see `docs/SECURITY.md`. After adding a table or function, review
+  `npx supabase db query --linked -f supabase/audit/privileges.sql` and run `npm run db:verify`
+  (`t038-security-audit.sql` walks the catalog, so new tables are checked automatically). Never grant
+  `EXECUTE` to clients on a function that takes as an argument something the server must decide (owner,
+  XP, species, level). Functions declared `returns trigger` can't be called via RPC at all.
 - There is no isolated test database, so schema/security changes are verified against the live project by
   scripts under `supabase/verification/*.sql`, all run by `npm run db:verify`. Every script must do its work
   inside one subtransaction that is ALWAYS rolled back (end with `raise exception 'TXXX_ROLLBACK'`, caught by
