@@ -462,3 +462,22 @@ Navegando dentro do app a partir do Dashboard: antes e depois, Tarefas, Foco, Jo
 ## 2026-10-14 — Pacote `motion` removido
 
 **Decisão (confirmada pelo usuário):** depois do T-034 o pacote estava instalado sem uso; foi desinstalado. A animação da insígnia é CSS e a preferência de movimento reduzido usa um hook próprio.
+
+## 2026-10-14 — Testes de domínio e integração (T-036): o que faltava era o lado do banco
+
+**Ponto de partida:** os módulos de regra pura já tinham 98% de linhas e 93% de ramos cobertos. As lacunas reais eram três: (1) os scripts de verificação antigos deixavam resíduo e não havia como rodar todos; (2) nada garantia que as fórmulas em SQL continuavam iguais às do TypeScript; (3) os caminhos tortos (reabrir, abandonar, trocar o time, repetir) não tinham teste no banco.
+
+**`npm run db:verify`:** roda os 12 scripts de `supabase/verification/` mais uma verificação gerada de paridade e imprime PASS/FAIL por script, saindo com erro se algum falhar. Não está no CI porque precisa do CLI do Supabase logado e ligado ao projeto real.
+
+**Todos os scripts agora revertem tudo:** os seis anteriores ao T-028 limpavam linha a linha (e três deles deixavam eventos e recompensas órfãos); foram convertidos para o padrão "subtransação sempre revertida". Cada um começa de um estado conhecido (time vazio, sem recompensas do dia, sem sessão ativa) dentro da própria transação, então o resultado não depende do que a conta real tem. O do T-025 também foi atualizado: testava captura em batalha selvagem sem etapa de campanha, comportamento que o T-030 removeu de propósito.
+
+**Paridade TypeScript ↔ SQL por um fixture único:** `tests/fixtures/rule-parity.json` lista saídas esperadas das regras — compromisso mínimo para 40 combinações de dificuldade × time, curva de XP em 8 níveis, XP de tarefa (cheio e reduzido) e de foco. `src/features/battles/rule-parity.test.ts` confere o motor TypeScript contra ele (roda no CI); `db:verify` gera SQL a partir do mesmo arquivo e confere os triggers e funções reais. Mudar uma regra de um lado só quebra um dos dois antes de gravar recompensa errada. O fixture é escrito à mão: é uma terceira cópia da regra, mas é a que permite comparar as outras duas.
+**Provado que detecta:** alterei um valor do fixture de propósito (sessão de 10 min → 99 XP); o teste unitário e o `db:verify` falharam, este com "a 10-minute session paid 15 XP, fixture says 99". Valor restaurado em seguida.
+
+**Caminhos tortos (`t036-robustness.sql`):** concluir → reabrir → concluir de novo paga a batalha uma vez só e não soma vitória; uma tarefa não aceita segunda batalha; a mesma conclusão repetida (retry) não cria evento nem recompensa; sessão cancelada deixa a batalha pendente, sem XP e sem trocar o encontro; sessão mais curta que o compromisso é retirada; o XP vai para quem está no time **na resolução**, não na aceitação.
+
+**RNG determinístico:** o script de encontros fixa a semente (`setseed`) antes dos sorteios, então passa ou falha igual em toda execução.
+
+**Cobertura como regra:** `npm run test:coverage` mede só os módulos de regra (domínios, motor, XP, agendamento, validação de conteúdo, esquemas) e exige 95% de linhas/declarações/funções e 90% de ramos. O CI passou a rodar esse comando no lugar de `npm run test`. Componentes de UI ficam de fora de propósito: são testados por comportamento.
+
+**O que continua sem teste automatizado em ambiente isolado:** não existe banco de teste separado; os testes de banco rodam contra o projeto real (revertendo). RLS com um **segundo usuário** ainda não foi testado — fica para o T-038.

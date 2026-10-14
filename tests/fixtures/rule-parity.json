@@ -1,0 +1,329 @@
+{
+  "//": "Expected outputs of the reward rules, shared by the TypeScript engine (rule-parity.test.ts) and the database (npm run db:verify). Changing a rule means changing engine.ts, the SQL functions and this file together.",
+  "commitments": [
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [],
+      "minTaskDifficulty": 2,
+      "minFocusMinutes": 2
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [],
+      "minTaskDifficulty": 3,
+      "minFocusMinutes": 3
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [],
+      "minTaskDifficulty": 4,
+      "minFocusMinutes": 4
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [],
+      "minTaskDifficulty": 5,
+      "minFocusMinutes": 5
+    },
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [9],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [9],
+      "minTaskDifficulty": 2,
+      "minFocusMinutes": 2
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [9],
+      "minTaskDifficulty": 3,
+      "minFocusMinutes": 3
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [9],
+      "minTaskDifficulty": 4,
+      "minFocusMinutes": 4
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [9],
+      "minTaskDifficulty": 5,
+      "minFocusMinutes": 5
+    },
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [10],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [10],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [10],
+      "minTaskDifficulty": 2,
+      "minFocusMinutes": 2
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [10],
+      "minTaskDifficulty": 3,
+      "minFocusMinutes": 3
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [10],
+      "minTaskDifficulty": 4,
+      "minFocusMinutes": 4
+    },
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [14, 15],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [14, 15],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [14, 15],
+      "minTaskDifficulty": 2,
+      "minFocusMinutes": 2
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [14, 15],
+      "minTaskDifficulty": 3,
+      "minFocusMinutes": 3
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [14, 15],
+      "minTaskDifficulty": 4,
+      "minFocusMinutes": 4
+    },
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [25],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [25],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [25],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [25],
+      "minTaskDifficulty": 2,
+      "minFocusMinutes": 2
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [25],
+      "minTaskDifficulty": 3,
+      "minFocusMinutes": 3
+    },
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [49],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [49],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [49],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [49],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [49],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [50],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [50],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [50],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [50],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [50],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 1,
+      "partyLevels": [99],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 2,
+      "partyLevels": [99],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 3,
+      "partyLevels": [99],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 4,
+      "partyLevels": [99],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    },
+    {
+      "encounterDifficulty": 5,
+      "partyLevels": [99],
+      "minTaskDifficulty": 1,
+      "minFocusMinutes": 1
+    }
+  ],
+  "xpCurve": [
+    {
+      "level": 1,
+      "totalXp": 1
+    },
+    {
+      "level": 2,
+      "totalXp": 8
+    },
+    {
+      "level": 5,
+      "totalXp": 125
+    },
+    {
+      "level": 10,
+      "totalXp": 1000
+    },
+    {
+      "level": 14,
+      "totalXp": 2744
+    },
+    {
+      "level": 36,
+      "totalXp": 46656
+    },
+    {
+      "level": 50,
+      "totalXp": 125000
+    },
+    {
+      "level": 100,
+      "totalXp": 1000000
+    }
+  ],
+  "taskXp": [
+    {
+      "difficulty": 1,
+      "full": 20,
+      "diminished": 10
+    },
+    {
+      "difficulty": 2,
+      "full": 40,
+      "diminished": 20
+    },
+    {
+      "difficulty": 3,
+      "full": 60,
+      "diminished": 30
+    },
+    {
+      "difficulty": 4,
+      "full": 80,
+      "diminished": 40
+    },
+    {
+      "difficulty": 5,
+      "full": 100,
+      "diminished": 50
+    }
+  ],
+  "focusXp": [
+    {
+      "minutes": 1,
+      "xp": 2
+    },
+    {
+      "minutes": 10,
+      "xp": 15
+    },
+    {
+      "minutes": 25,
+      "xp": 38
+    },
+    {
+      "minutes": 33,
+      "xp": 50
+    },
+    {
+      "minutes": 60,
+      "xp": 90
+    }
+  ],
+  "taskFullRewardsPerDay": 5
+}

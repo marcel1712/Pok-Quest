@@ -28,6 +28,9 @@ begin
 
   begin
     perform set_config('request.jwt.claims', json_build_object('sub', test_owner)::text, true);
+    -- Fixed seed: the rolls below are the same on every run, so a pass or a failure is
+    -- reproducible instead of depending on the luck of the draw.
+    perform setseed(0.42);
     delete from public.campaign_node_progress where owner_id = test_owner;
     update public.encounters set consumed_at = now() where owner_id = test_owner and consumed_at is null;
     update public.owned_pokemon set party_position = null where owner_id = test_owner;

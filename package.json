@@ -18,7 +18,9 @@
     "db:types": "supabase gen types typescript --linked > src/shared/types/database.ts",
     "catalog:import": "tsx scripts/import-species-catalog.ts",
     "campaign:seed": "tsx scripts/generate-campaign-seed.ts",
-    "perf:measure": "tsx scripts/measure-navigation.ts"
+    "perf:measure": "tsx scripts/measure-navigation.ts",
+    "db:verify": "tsx scripts/run-db-verification.ts",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
@@ -40,6 +42,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.4",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",

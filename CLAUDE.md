@@ -25,6 +25,8 @@ npm run format            # Prettier (writes)
 npm run format:check       # Prettier (check only)
 npm run test             # Vitest, single run
 npm run test:watch        # Vitest, watch mode
+npm run test:coverage      # Vitest + enforced coverage of the pure rule modules (what CI runs)
+npm run db:verify           # every supabase/verification script + TS/SQL rule parity, against the live project
 npm run test:e2e           # Playwright (auto-starts dev server on :4173)
 ```
 
@@ -99,12 +101,16 @@ conventions:
   fixed vulnerability here more than once. Functions declared `returns trigger` can't be called directly
   via RPC (Postgres rejects the calling convention) and are safe by construction; plain-return functions
   are not.
-- There is no isolated test database, so schema/security changes are verified by hand against the live
-  project: write a script under `supabase/verification/*.sql` (wrapped in `do $$ ... exception ... end $$`
-  so failures roll back cleanly, test rows prefixed `__tXXX_...__`, and explicit cleanup at the end of the
-  script, not relying on rollback), run it with `npx supabase db query --linked -f <path>`, and confirm
-  zero residue afterward. To test role-dependent grants (not just `postgres`, which bypasses grants/RLS),
-  use `SET ROLE authenticated` inside the script, or `curl` against the REST API with the anon key.
+- There is no isolated test database, so schema/security changes are verified against the live project by
+  scripts under `supabase/verification/*.sql`, all run by `npm run db:verify`. Every script must do its work
+  inside one subtransaction that is ALWAYS rolled back (end with `raise exception 'TXXX_ROLLBACK'`, caught by
+  the enclosing block) and must first put the account in a known state inside that transaction — never
+  "clean up at the end": forgotten cleanup has already polluted the user's real history once. To test
+  role-dependent grants (not just `postgres`, which bypasses grants/RLS), use `set local role authenticated`
+  with `request.jwt.claims` set, or `curl` against the REST API with the anon key.
+- Reward formulas exist in both `engine.ts` and SQL. `tests/fixtures/rule-parity.json` pins their expected
+  outputs: `rule-parity.test.ts` checks the TypeScript side, `db:verify` the database side. Change all three
+  together.
 
 ### CI vs. local E2E
 

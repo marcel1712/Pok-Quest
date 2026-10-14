@@ -30,10 +30,26 @@ Este projeto tem um único ambiente Supabase (dev = produção) — não há ban
   ```
 - Se/quando um projeto Supabase de staging existir, o job autenticado pode ser promovido para o CI usando esse projeto e Secrets dedicados — não o projeto de produção.
 
+## Testes de banco (`npm run db:verify`)
+
+Regras que só existem no Postgres (triggers, RPCs, RLS, grants) são verificadas por scripts em `supabase/verification/*.sql`, rodados contra o projeto real pelo CLI do Supabase.
+
+- **Todo script roda dentro de uma subtransação que é sempre revertida** (um `raise exception 'TXXX_ROLLBACK'` no fim, capturado no bloco externo). Nada do que ele cria sobrevive, passando ou falhando. Não escreva script que "limpa no final": limpeza esquecida vira dado falso no histórico do usuário.
+- Cada script começa colocando a conta num estado conhecido **dentro da transação** (time vazio, sem recompensas do dia, sem sessão ativa), para não depender dos dados reais.
+- Para testar grants e RLS como o cliente, use `set local role authenticated` com `request.jwt.claims` definido; como `postgres` tudo passa.
+- `npm run db:verify` roda todos e mais a **paridade de regras**: os números de `tests/fixtures/rule-parity.json` têm de ser exatamente o que o banco produz. O mesmo arquivo é conferido contra o motor TypeScript em `rule-parity.test.ts`. Ao mudar uma fórmula, mude `engine.ts`, a função SQL e o fixture juntos.
+- Não roda no CI (precisa do CLI logado). Rode antes de commitar qualquer migration que toque regra de recompensa, campanha ou permissão.
+
+## Cobertura
+
+`npm run test:coverage` mede apenas os módulos de regra pura e falha abaixo de 95% (linhas, declarações, funções) ou 90% (ramos). É o que o CI executa. Não há meta de cobertura para componentes de UI.
+
 ## Rodando os testes
 
 ```bash
 npm run test        # unitário/componente (Vitest, execução única)
 npm run test:watch  # unitário/componente (watch)
+npm run test:coverage # unitário + cobertura dos módulos de regra (o que o CI roda)
+npm run db:verify   # scripts de banco + paridade de regras, contra o projeto real (reverte tudo)
 npm run test:e2e    # Playwright (sobe o dev server automaticamente na porta 4173)
 ```
