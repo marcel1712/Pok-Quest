@@ -18,7 +18,7 @@ export function ActiveSessionPanel({
 }: {
   session: FocusSession
   reduceMotion?: boolean
-  onConfirmed?: () => void
+  onConfirmed?: (session: FocusSession) => void
 }) {
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false)
   const clock = useSessionClock(session)
@@ -26,7 +26,7 @@ export function ActiveSessionPanel({
 
   const pause = usePauseFocusSession()
   const resume = useResumeFocusSession()
-  const confirm = useConfirmFocusSession()
+  const confirm = useConfirmFocusSession(onConfirmed)
   const cancel = useCancelFocusSession()
 
   if (!clock) return null
@@ -81,7 +81,7 @@ export function ActiveSessionPanel({
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => confirm.mutate(session, { onSuccess: () => onConfirmed?.() })}
+              onClick={() => confirm.mutate(session)}
               disabled={isBusy}
               className="btn btn-primary btn-lg"
             >

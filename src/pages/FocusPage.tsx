@@ -15,6 +15,7 @@ import { useActiveFocusSession } from '@/features/focus/hooks/use-active-focus-s
 import { useCompletionChime } from '@/features/focus/hooks/use-completion-chime'
 import { useStartFocusSession } from '@/features/focus/hooks/use-focus-session-mutations'
 import { useSessionClock } from '@/features/focus/hooks/use-session-clock'
+import type { FocusSession } from '@/features/focus/types'
 import { NarrativeScene } from '@/features/journey/components/NarrativeScene'
 import { VictoryEpilogue } from '@/features/journey/components/VictoryEpilogue'
 import { useCurrentEncounter } from '@/features/journey/hooks/use-current-encounter'
@@ -101,16 +102,15 @@ export function FocusPage() {
     )
   }
 
-  function handleConfirmed() {
-    if (!activeSession) return
-    queryClient.invalidateQueries({ queryKey: queryKeys.battles.forFocusSession(activeSession.id) })
+  function handleConfirmed(session: FocusSession) {
+    queryClient.invalidateQueries({ queryKey: queryKeys.battles.forFocusSession(session.id) })
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.progress() })
     // A victory consumes the encounter; the next one is generated on this refetch.
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.encounter() })
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.badges() })
     // The battle also granted XP (and possibly a level or a pending evolution).
     queryClient.invalidateQueries({ queryKey: queryKeys.ownedPokemon.all })
-    setRest({ phase: 'battleResult', focusSessionId: activeSession.id })
+    setRest({ phase: 'battleResult', focusSessionId: session.id })
   }
 
   const isIdleLoading = isLoading || (!activeSession && isEncounterLoading)

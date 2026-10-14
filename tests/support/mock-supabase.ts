@@ -15,13 +15,13 @@ function supabaseUrl(): string {
 }
 
 export const SUPABASE_HOST = new URL(supabaseUrl()).hostname
-const STORAGE_KEY = `sb-${SUPABASE_HOST.split('.')[0]}-auth-token`
-const OWNER_ID = '00000000-0000-4000-8000-000000000001'
+export const STORAGE_KEY = `sb-${SUPABASE_HOST.split('.')[0]}-auth-token`
+export const OWNER_ID = '00000000-0000-4000-8000-000000000001'
 const NOW = '2026-10-14T12:00:00Z'
 
 const base64Url = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url')
 
-function fakeSession() {
+export function fakeSession() {
   const expiresAt = Math.floor(Date.now() / 1000) + 3600
   const user = {
     id: OWNER_ID,
@@ -42,7 +42,7 @@ function fakeSession() {
   }
 }
 
-function species(pokedexNumber: number, name: string) {
+export function species(pokedexNumber: number, name: string) {
   return {
     pokedex_number: pokedexNumber,
     name,

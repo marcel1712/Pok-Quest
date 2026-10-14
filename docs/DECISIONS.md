@@ -481,3 +481,19 @@ Navegando dentro do app a partir do Dashboard: antes e depois, Tarefas, Foco, Jo
 **Cobertura como regra:** `npm run test:coverage` mede só os módulos de regra (domínios, motor, XP, agendamento, validação de conteúdo, esquemas) e exige 95% de linhas/declarações/funções e 90% de ramos. O CI passou a rodar esse comando no lugar de `npm run test`. Componentes de UI ficam de fora de propósito: são testados por comportamento.
 
 **O que continua sem teste automatizado em ambiente isolado:** não existe banco de teste separado; os testes de banco rodam contra o projeto real (revertendo). RLS com um **segundo usuário** ainda não foi testado — fica para o T-038.
+
+## 2026-10-14 — E2E dos fluxos essenciais (T-037): navegador real, backend simulado com estado
+
+**Decisão:** os seis fluxos do plano rodam em `tests/e2e/essential-flows.spec.ts` contra `tests/support/fake-backend.ts`, um substituto da API do Supabase que **guarda estado** durante o teste: o que o app grava é lido de volta. Ele fala PostgREST o bastante para este app (filtros `eq`/`in`/`gte`, ordenação, limite, insert, update condicional, resposta de objeto único, RPCs) e reimplementa em poucas linhas as regras de servidor de que os fluxos dependem (uma sessão ativa, resolução da batalha na conclusão, XP para o time, uma captura por batalha).
+**Por que não contra o banco real:** não há ambiente de teste separado, e um E2E autenticado real gravaria tarefas, batalhas e XP de teste no histórico do usuário. Com o fake, os testes rodam no CI e nunca tocam o projeto.
+**O que isso prova e o que não prova:** prova que o **frontend** conduz corretamente um backend bem-comportado — persistência após recarregar, cronômetro, repetição após falha, navegação. Não prova que os triggers, RPCs e o RLS reais se comportam assim; isso é o `npm run db:verify`. Um E2E autenticado contra um Supabase de verdade continua pendente de um projeto de staging.
+**Fluxos cobertos:** login → criar tarefa → concluir → recarregar e continuar concluída; sessão de foco → confirmar → batalha → recompensa única → captura; recarregar no meio da sessão sem zerar o cronômetro; resposta perdida na confirmação seguida de nova tentativa, sem XP em dobro; navegação entre páginas sem recarregar o documento e com dados coerentes; o mesmo caminho em 360 px com toque.
+**Tempo:** os testes de foco usam o relógio falso do Playwright (`page.clock`) para avançar o minuto da sessão.
+
+## 2026-10-14 — Bug real encontrado pelo E2E: o resultado da batalha não aparecia após confirmar a sessão
+
+**Sintoma:** num navegador de verdade, clicar em "Confirmar conclusão" voltava direto para o card do próximo encontro. A sessão era concluída e a batalha resolvida e paga no servidor, mas a tela de vitória (XP, captura, insígnia, cena final) nunca era mostrada — e sem ela não havia como capturar o Pokémon daquela batalha.
+**Causa:** a página de Foco era avisada por um callback passado a `mutate()`. O `onSuccess` do hook roda antes e atualiza o cache da sessão ativa para "nenhuma", o que desmonta o painel do cronômetro; o TanStack Query descarta callbacks de `mutate()` de um componente já desmontado.
+**Correção:** o aviso passou a ser um callback do próprio hook (`useConfirmFocusSession(onConfirmed)`), executado antes de o cache ser atualizado. Callbacks de hook sempre rodam.
+**Por que os testes unitários não pegaram:** em jsdom com repositórios simulados a ordem dos eventos é outra e o teste passava. Só o navegador real mostrou.
+**Não investigado:** desde quando o defeito existe. O usuário viu essa tela funcionando na época do T-026, então começou depois; não fiz a bisseção.

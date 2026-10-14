@@ -29,17 +29,27 @@ export function useStartFocusSession() {
  * `fromStatuses` is the status (or statuses) the session must still be in for this
  * transition to actually apply — see `transitionSession` for why that guard matters
  * for retries after a dropped response.
+ *
+ * `onApplied` runs BEFORE the active-session cache is updated. That ordering matters:
+ * updating the cache is what unmounts the component that started the transition (the
+ * session stops being active), and a callback passed to `mutate()` is silently dropped
+ * once its component is gone — which is how the battle result screen once failed to
+ * appear after confirming a session. A hook-level callback always runs.
  */
 function useSessionTransitionMutation(
   fromStatuses: string[],
   computePatch: (session: FocusSession) => ReturnType<typeof pauseSession>,
+  onApplied?: (session: FocusSession) => void,
 ) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (session: FocusSession) =>
       transitionSession(session.id, fromStatuses, computePatch(session)),
-    onSuccess: (session) => syncActiveSession(queryClient, session),
+    onSuccess: (session) => {
+      onApplied?.(session)
+      return syncActiveSession(queryClient, session)
+    },
   })
 }
 
@@ -61,6 +71,10 @@ export function useCancelFocusSession() {
   )
 }
 
-export function useConfirmFocusSession() {
-  return useSessionTransitionMutation(['running'], (session) => confirmSession(session, Date.now()))
+export function useConfirmFocusSession(onConfirmed?: (session: FocusSession) => void) {
+  return useSessionTransitionMutation(
+    ['running'],
+    (session) => confirmSession(session, Date.now()),
+    onConfirmed,
+  )
 }
