@@ -1,0 +1,282 @@
+import type { WildEncounterContent } from './schema.ts'
+import { SPECIES_INDEX } from './species-index.ts'
+
+// Wild encounter tables for Sinnoh's routes and caves, keyed by node slug. Species and
+// level ranges approximate Pokémon Platinum's from memory — they were not checked
+// against game data, and are restricted to what the catalog (species-index.ts) holds.
+// Each row is [species name, min level, max level, weight]; weights are relative
+// within a table (they add up to 100 here only for readability).
+
+type Row = [name: string, minLevel: number, maxLevel: number, weight: number]
+
+const numberByName = new Map(
+  Object.entries(SPECIES_INDEX).map(([number, species]) => [species.name, Number(number)]),
+)
+
+function table(rows: Row[]): WildEncounterContent[] {
+  return rows.map(([name, minLevel, maxLevel, weight]) => {
+    const species = numberByName.get(name)
+    if (species === undefined) throw new Error(`Unknown species "${name}" in a wild table`)
+    return { species, minLevel, maxLevel, weight }
+  })
+}
+
+export const SINNOH_WILD: Record<string, WildEncounterContent[]> = {
+  'route-201': table([
+    ['Starly', 2, 3, 50],
+    ['Bidoof', 2, 3, 40],
+    ['Kricketot', 2, 3, 10],
+  ]),
+  'route-202': table([
+    ['Starly', 3, 4, 30],
+    ['Bidoof', 2, 4, 30],
+    ['Shinx', 3, 4, 25],
+    ['Kricketot', 3, 4, 15],
+  ]),
+  'oreburgh-gate': table([
+    ['Geodude', 5, 7, 45],
+    ['Zubat', 5, 7, 40],
+    ['Psyduck', 5, 8, 15],
+  ]),
+  'oreburgh-mine': table([
+    ['Geodude', 6, 9, 45],
+    ['Zubat', 6, 8, 40],
+    ['Onix', 7, 9, 15],
+  ]),
+  'route-204': table([
+    ['Bidoof', 6, 8, 25],
+    ['Starly', 6, 8, 20],
+    ['Budew', 6, 9, 20],
+    ['Shinx', 6, 8, 15],
+    ['Wurmple', 6, 7, 15],
+    ['Kricketot', 6, 8, 5],
+  ]),
+  'ravaged-path': table([
+    ['Zubat', 6, 8, 45],
+    ['Geodude', 6, 8, 35],
+    ['Psyduck', 7, 9, 20],
+  ]),
+  'route-205': table([
+    ['Bidoof', 9, 11, 20],
+    ['Shellos', 10, 12, 20],
+    ['Buizel', 10, 12, 20],
+    ['Budew', 9, 11, 15],
+    ['Hoothoot', 10, 12, 15],
+    ['Pachirisu', 10, 12, 10],
+  ]),
+  'eterna-forest': table([
+    ['Budew', 10, 13, 20],
+    ['Wurmple', 10, 12, 15],
+    ['Buneary', 11, 13, 15],
+    ['Silcoon', 11, 13, 10],
+    ['Cascoon', 11, 13, 10],
+    ['Hoothoot', 10, 12, 10],
+    ['Gastly', 12, 14, 10],
+    ['Murkrow', 12, 14, 5],
+    ['Misdreavus', 12, 14, 5],
+  ]),
+  'wayward-cave': table([
+    ['Zubat', 16, 18, 35],
+    ['Geodude', 16, 18, 30],
+    ['Bronzor', 16, 18, 20],
+    ['Onix', 17, 19, 10],
+    ['Gible', 17, 19, 5],
+  ]),
+  'route-207': table([
+    ['Machop', 15, 17, 35],
+    ['Geodude', 15, 17, 30],
+    ['Ponyta', 15, 17, 25],
+    ['Zubat', 15, 17, 10],
+  ]),
+  'route-208': table([
+    ['Machop', 18, 20, 20],
+    ['Bibarel', 18, 20, 15],
+    ['Psyduck', 18, 20, 15],
+    ['Roselia', 18, 20, 15],
+    ['Meditite', 18, 20, 15],
+    ['Zubat', 17, 19, 10],
+    ['Ralts', 17, 19, 10],
+  ]),
+  'route-209': table([
+    ['Staravia', 18, 20, 20],
+    ['Bibarel', 18, 20, 15],
+    ['Gastly', 17, 19, 15],
+    ['Zubat', 17, 19, 15],
+    ['Duskull', 18, 20, 10],
+    ['Mime Jr.', 18, 20, 10],
+    ['Bonsly', 18, 20, 10],
+    ['Chansey', 19, 20, 5],
+  ]),
+  'route-210-south': table([
+    ['Ponyta', 19, 22, 25],
+    ['Staravia', 20, 22, 20],
+    ['Kricketune', 20, 22, 15],
+    ['Geodude', 19, 21, 15],
+    ['Psyduck', 20, 22, 15],
+    ['Hoothoot', 19, 21, 5],
+    ['Scyther', 21, 23, 5],
+  ]),
+  'route-214': table([
+    ['Graveler', 23, 25, 20],
+    ['Ponyta', 22, 24, 20],
+    ['Stunky', 22, 24, 15],
+    ['Girafarig', 22, 24, 15],
+    ['Kricketune', 22, 24, 15],
+    ['Houndour', 22, 24, 10],
+    ['Sudowoodo', 23, 25, 5],
+  ]),
+  'route-213': table([
+    ['Wingull', 20, 24, 30],
+    ['Buizel', 22, 25, 20],
+    ['Shellos', 22, 24, 20],
+    ['Chatot', 22, 24, 15],
+    ['Tentacool', 20, 25, 15],
+  ]),
+  'great-marsh': table([
+    ['Wooper', 22, 24, 20],
+    ['Marill', 22, 24, 15],
+    ['Quagsire', 24, 26, 10],
+    ['Bibarel', 22, 24, 10],
+    ['Tangela', 22, 24, 10],
+    ['Yanma', 22, 24, 10],
+    ['Croagunk', 22, 26, 10],
+    ['Skorupi', 22, 26, 8],
+    ['Carnivine', 22, 26, 7],
+  ]),
+  'route-212': table([
+    ['Staravia', 22, 24, 15],
+    ['Roselia', 22, 24, 15],
+    ['Marill', 22, 24, 15],
+    ['Shellos', 24, 26, 15],
+    ['Kirlia', 22, 24, 10],
+    ['Quagsire', 24, 26, 10],
+    ['Croagunk', 24, 26, 10],
+    ['Buizel', 22, 24, 10],
+  ]),
+  'route-210-north': table([
+    ['Machoke', 28, 30, 20],
+    ['Meditite', 26, 28, 15],
+    ['Swablu', 27, 29, 15],
+    ['Noctowl', 28, 30, 15],
+    ['Bibarel', 27, 29, 10],
+    ['Golduck', 28, 30, 10],
+    ['Graveler', 27, 29, 10],
+    ['Scyther', 28, 30, 5],
+  ]),
+  'fuego-ironworks': table([
+    ['Magnemite', 27, 30, 30],
+    ['Floatzel', 27, 29, 20],
+    ['Gastrodon', 28, 30, 20],
+    ['Magmar', 28, 30, 15],
+    ['Wingull', 26, 28, 15],
+  ]),
+  'route-218': table([
+    ['Floatzel', 28, 30, 25],
+    ['Gastrodon', 28, 30, 25],
+    ['Mr. Mime', 28, 30, 15],
+    ['Glameow', 28, 30, 15],
+    ['Chatot', 28, 30, 10],
+    ['Tentacruel', 30, 32, 10],
+  ]),
+  'route-211': table([
+    ['Meditite', 29, 31, 20],
+    ['Machoke', 30, 32, 20],
+    ['Graveler', 30, 32, 20],
+    ['Bronzor', 29, 31, 15],
+    ['Noctowl', 30, 32, 15],
+    ['Chingling', 28, 30, 10],
+  ]),
+  'mt-coronet-north': table([
+    ['Golbat', 32, 34, 20],
+    ['Graveler', 32, 34, 20],
+    ['Machoke', 32, 34, 15],
+    ['Clefairy', 30, 32, 15],
+    ['Bronzong', 33, 35, 10],
+    ['Medicham', 33, 35, 10],
+    ['Nosepass', 32, 34, 5],
+    ['Chingling', 30, 32, 5],
+  ]),
+  'route-216': table([
+    ['Snover', 32, 35, 30],
+    ['Sneasel', 32, 35, 20],
+    ['Machoke', 33, 35, 15],
+    ['Medicham', 33, 35, 15],
+    ['Graveler', 32, 34, 10],
+    ['Noctowl', 32, 34, 10],
+  ]),
+  'route-217': table([
+    ['Snover', 33, 36, 30],
+    ['Sneasel', 33, 36, 20],
+    ['Swinub', 33, 35, 20],
+    ['Snorunt', 34, 36, 15],
+    ['Medicham', 34, 36, 10],
+    ['Abomasnow', 38, 40, 5],
+  ]),
+  'mt-coronet-summit': table([
+    ['Snover', 36, 38, 20],
+    ['Abomasnow', 38, 40, 15],
+    ['Golbat', 37, 39, 15],
+    ['Medicham', 38, 40, 15],
+    ['Bronzong', 38, 40, 15],
+    ['Machoke', 37, 39, 10],
+    ['Chimecho', 38, 40, 5],
+    ['Absol', 38, 40, 5],
+  ]),
+  'route-222': table([
+    ['Luxio', 38, 40, 20],
+    ['Pelipper', 38, 40, 20],
+    ['Gastrodon', 38, 40, 15],
+    ['Floatzel', 39, 41, 15],
+    ['Chatot', 38, 40, 10],
+    ['Electabuzz', 39, 41, 10],
+    ['Purugly', 39, 41, 10],
+  ]),
+  'victory-road': table([
+    ['Golbat', 42, 45, 20],
+    ['Graveler', 42, 45, 20],
+    ['Machoke', 43, 45, 15],
+    ['Medicham', 43, 45, 15],
+    ['Steelix', 44, 46, 10],
+    ['Rhydon', 44, 46, 10],
+    ['Gabite', 44, 46, 5],
+    ['Azumarill', 43, 45, 5],
+  ]),
+  'route-225': table([
+    ['Machoke', 50, 52, 20],
+    ['Graveler', 50, 52, 20],
+    ['Skuntank', 50, 52, 15],
+    ['Purugly', 50, 52, 15],
+    ['Rhydon', 51, 53, 15],
+    ['Houndoom', 51, 53, 15],
+  ]),
+  'route-227': table([
+    ['Rhydon', 52, 55, 20],
+    ['Graveler', 52, 54, 20],
+    ['Golbat', 52, 54, 15],
+    ['Magmar', 53, 55, 15],
+    ['Houndoom', 53, 55, 15],
+    ['Rapidash', 53, 55, 10],
+    ['Absol', 53, 55, 5],
+  ]),
+  'stark-mountain': table([
+    ['Graveler', 54, 57, 20],
+    ['Golbat', 54, 57, 15],
+    ['Rhydon', 55, 57, 15],
+    ['Magmar', 55, 58, 15],
+    ['Machoke', 55, 57, 15],
+    ['Onix', 54, 56, 10],
+    ['Steelix', 56, 58, 5],
+    ['Rapidash', 55, 57, 5],
+  ]),
+  'route-229': table([
+    ['Roselia', 50, 52, 20],
+    ['Purugly', 50, 52, 15],
+    ['Girafarig', 50, 52, 15],
+    ['Heracross', 51, 53, 10],
+    ['Scyther', 51, 53, 10],
+    ['Tropius', 51, 53, 10],
+    ['Azumarill', 50, 52, 10],
+    ['Togetic', 51, 53, 5],
+    ['Ambipom', 51, 53, 5],
+  ]),
+}

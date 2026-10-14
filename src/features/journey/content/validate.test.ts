@@ -3,6 +3,8 @@ import type { CampaignNodeContent, CampaignRegionContent } from './schema'
 import { sinnoh } from './sinnoh'
 import { validateCampaignRegion } from './validate'
 
+const starly = { species: 396, minLevel: 2, maxLevel: 3, weight: 10 }
+
 function node(overrides: Partial<CampaignNodeContent> & { id: string }): CampaignNodeContent {
   return {
     kind: 'route',
@@ -12,6 +14,7 @@ function node(overrides: Partial<CampaignNodeContent> & { id: string }): Campaig
     requiredVictories: 1,
     repeatable: false,
     requires: [],
+    wildEncounters: [starly],
     ...overrides,
   }
 }
@@ -119,6 +122,58 @@ describe('validateCampaignRegion', () => {
         region([node({ id: 'test.a', kind: 'gym', encounter: { kind: 'wild', difficulty: 3 } })]),
       ),
     ).toContain('test.a: a gym node cannot have a wild encounter')
+  })
+
+  it('requires a wild table on wild nodes, and only there', () => {
+    expect(validateCampaignRegion(region([node({ id: 'test.a', wildEncounters: [] })]))).toContain(
+      'test.a: a wild node needs at least one wild encounter entry',
+    )
+
+    expect(
+      validateCampaignRegion(
+        region([node({ id: 'test.a', encounter: { kind: 'trainer', difficulty: 1 } })]),
+      ),
+    ).toContain('test.a: only wild nodes can list wild encounters')
+  })
+
+  it('rejects species outside the catalog, legendaries and duplicates in a wild table', () => {
+    const issues = validateCampaignRegion(
+      region([
+        node({
+          id: 'test.a',
+          wildEncounters: [
+            starly,
+            starly,
+            { species: 1, minLevel: 2, maxLevel: 3, weight: 10 },
+            { species: 483, minLevel: 50, maxLevel: 50, weight: 1 },
+          ],
+        }),
+      ]),
+    )
+    expect(issues).toContain('test.a: species #396 is listed twice')
+    expect(issues).toContain('test.a: species #1 is not in the catalog')
+    expect(issues).toContain('test.a: Dialga is legendary and cannot be a wild encounter')
+  })
+
+  it('rejects an inverted level range', () => {
+    const issues = validateCampaignRegion(
+      region([
+        node({
+          id: 'test.a',
+          wildEncounters: [{ species: 396, minLevel: 5, maxLevel: 3, weight: 10 }],
+        }),
+      ]),
+    )
+    expect(issues).toHaveLength(1)
+    expect(issues[0]).toContain('minLevel must not exceed maxLevel')
+  })
+
+  it('gives every wild Sinnoh node its own table', () => {
+    const wildNodes = sinnoh.nodes.filter((entry) => entry.encounter.kind === 'wild')
+    expect(wildNodes.length).toBeGreaterThan(25)
+    for (const entry of wildNodes) {
+      expect(entry.wildEncounters?.length ?? 0, entry.id).toBeGreaterThan(0)
+    }
   })
 
   it('reports repeatable nodes that are not routes', () => {

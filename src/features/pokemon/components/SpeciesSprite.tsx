@@ -29,6 +29,7 @@ export function SpeciesSprite({
     <img
       src={src}
       alt={species.name}
+      loading="lazy"
       width={size}
       height={size}
       style={{ imageRendering: 'pixelated' }}

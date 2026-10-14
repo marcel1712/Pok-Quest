@@ -1,7 +1,8 @@
 /**
  * Validates the campaign content under src/features/journey/content/ and prints an
  * idempotent SQL seed for `campaign_regions` / `campaign_nodes` /
- * `campaign_node_prerequisites` to stdout. Offline admin script, never run by the app.
+ * `campaign_node_prerequisites` / `campaign_node_wild_encounters` to stdout. Offline
+ * admin script, never run by the app.
  * Put the output in a new migration (`npx supabase migration new seed_campaign_...`)
  * and apply it with `npm run db:push`.
  *
@@ -38,6 +39,13 @@ function regionSeed(region: CampaignRegionContent, sortOrder: number): string {
     node.requires.map((requiredId) => `  (${text(node.id)}, ${text(requiredId)})`),
   )
 
+  const wildRows = region.nodes.flatMap((node) =>
+    (node.wildEncounters ?? []).map(
+      (entry) =>
+        `  (${text(node.id)}, ${entry.species}, ${entry.minLevel}, ${entry.maxLevel}, ${entry.weight})`,
+    ),
+  )
+
   return `-- Region "${region.id}", content version ${region.contentVersion}.
 insert into public.campaign_regions (id, name, sort_order, content_version) values
   (${text(region.id)}, ${text(region.name)}, ${sortOrder}, ${region.contentVersion})
@@ -65,6 +73,14 @@ delete from public.campaign_node_prerequisites
 ${
   prerequisiteRows.length > 0
     ? `insert into public.campaign_node_prerequisites (node_id, requires_node_id) values\n${prerequisiteRows.join(',\n')};`
+    : ''
+}
+
+delete from public.campaign_node_wild_encounters
+  where node_id in (select id from public.campaign_nodes where region_id = ${text(region.id)});
+${
+  wildRows.length > 0
+    ? `insert into public.campaign_node_wild_encounters (node_id, pokedex_number, min_level, max_level, weight) values\n${wildRows.join(',\n')};`
     : ''
 }
 `

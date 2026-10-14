@@ -12,8 +12,10 @@ import {
 } from '@/features/focus/api/focus-sessions-repository'
 import {
   getCampaignContent,
+  getCurrentEncounter,
   listCampaignProgress,
 } from '@/features/journey/api/campaign-repository'
+import { getSpeciesByPokedexNumber } from '@/features/pokemon/api/species-catalog-repository'
 import { listRewardEvents } from '@/features/rewards/api/reward-events-repository'
 import { getProfile, updateFocusPreferences } from '@/features/settings/api/profile-repository'
 import { getTaskById, listTasks } from '@/features/tasks/api/tasks-repository'
@@ -24,6 +26,12 @@ import { FocusPage } from './FocusPage'
 vi.mock('@/features/journey/api/campaign-repository', () => ({
   getCampaignContent: vi.fn(),
   listCampaignProgress: vi.fn(),
+  getCurrentEncounter: vi.fn(),
+}))
+
+vi.mock('@/features/pokemon/api/species-catalog-repository', () => ({
+  getSpeciesByPokedexNumber: vi.fn(),
+  listSpeciesCatalog: vi.fn(),
 }))
 
 vi.mock('@/features/battles/api/battles-repository', () => ({
@@ -59,6 +67,35 @@ const getBattleForFocusSessionMock = vi.mocked(getBattleForFocusSession)
 const listRewardEventsMock = vi.mocked(listRewardEvents)
 const getCampaignContentMock = vi.mocked(getCampaignContent)
 const listCampaignProgressMock = vi.mocked(listCampaignProgress)
+const getCurrentEncounterMock = vi.mocked(getCurrentEncounter)
+const getSpeciesByPokedexNumberMock = vi.mocked(getSpeciesByPokedexNumber)
+
+const wildEncounter = {
+  id: 'encounter-1',
+  owner_id: 'owner-1',
+  campaign_node_id: 'sinnoh.route-201',
+  encounter_kind: 'wild',
+  encounter_difficulty: 1,
+  wild_species_pokedex_number: 396,
+  wild_level: 3,
+  created_at: '2026-10-13T00:00:00Z',
+  consumed_at: null,
+  consumed_by_battle_id: null,
+}
+
+const starly = {
+  pokedex_number: 396,
+  name: 'Starly',
+  types: ['normal', 'flying'],
+  sprite_url: null,
+  official_artwork_url: null,
+  is_starter: false,
+  is_legendary: false,
+  evolves_to_pokedex_number: 397,
+  evolution_min_level: 14,
+  catalog_version: 2,
+  imported_at: '2026-10-13T00:00:00Z',
+}
 
 const campaignContent = {
   nodes: [
@@ -120,6 +157,8 @@ function makeBattle(overrides: Partial<Battle> = {}): Battle {
     team_multiplier_applied: null,
     wild_species_pokedex_number: null,
     campaign_node_id: 'sinnoh.route-201',
+    encounter_id: 'encounter-1',
+    wild_level: null,
     created_at: new Date().toISOString(),
     resolved_at: null,
     ...overrides,
@@ -152,6 +191,8 @@ beforeEach(() => {
   listRewardEventsMock.mockReset().mockResolvedValue([])
   getCampaignContentMock.mockReset().mockResolvedValue(campaignContent)
   listCampaignProgressMock.mockReset().mockResolvedValue([])
+  getCurrentEncounterMock.mockReset().mockResolvedValue(wildEncounter)
+  getSpeciesByPokedexNumberMock.mockReset().mockResolvedValue(starly)
   getActiveSessionMock.mockReset()
   startSessionMock.mockReset()
   transitionSessionMock.mockReset()
@@ -173,7 +214,7 @@ describe('FocusPage — encounter before starting', () => {
     getActiveSessionMock.mockResolvedValue(null)
     renderPage()
 
-    expect(await screen.findByText('Pokémon selvagem')).toBeInTheDocument()
+    expect(await screen.findByText('Starly selvagem · Nv. 3')).toBeInTheDocument()
     expect(screen.getByText('Rota 201')).toBeInTheDocument()
     expect(
       screen.getByText('sessão de foco de pelo menos 1 min', { exact: false }),
@@ -200,15 +241,31 @@ describe('FocusPage — encounter before starting', () => {
           commitmentType: 'focusSession',
           minDurationMinutes: 1,
           focusSessionId: 'session-1',
-          campaignNodeId: 'sinnoh.route-201',
+          encounterId: 'encounter-1',
         }),
       ),
     )
   })
 
-  it('falls back to the plain start form when the campaign cannot be loaded', async () => {
+  it('shows a non-wild encounter by its kind, with no species', async () => {
     getActiveSessionMock.mockResolvedValue(null)
-    getCampaignContentMock.mockRejectedValue({ code: '42501', message: 'denied' })
+    getCurrentEncounterMock.mockResolvedValue({
+      ...wildEncounter,
+      encounter_kind: 'rival',
+      encounter_difficulty: 2,
+      wild_species_pokedex_number: null,
+      wild_level: null,
+    })
+    renderPage()
+
+    expect(await screen.findByText('Rival')).toBeInTheDocument()
+    expect(screen.queryByText(/selvagem/)).not.toBeInTheDocument()
+    expect(getSpeciesByPokedexNumberMock).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the plain start form when the encounter cannot be loaded', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    getCurrentEncounterMock.mockRejectedValue({ code: '42501', message: 'denied' })
     renderPage()
 
     expect(await screen.findByRole('button', { name: 'Iniciar foco' })).toBeInTheDocument()
@@ -413,7 +470,7 @@ describe('FocusPage — awaiting confirmation', () => {
     expect(await screen.findByRole('timer')).toHaveTextContent('05:00')
 
     await userEvent.click(screen.getByRole('button', { name: 'Pular descanso' }))
-    await screen.findByText('Pokémon selvagem')
+    await screen.findByText('Starly selvagem · Nv. 3')
   })
 })
 
@@ -435,7 +492,7 @@ describe('FocusPage — preferences', () => {
     getActiveSessionMock.mockResolvedValue(null)
     renderPage()
 
-    await screen.findByText('Pokémon selvagem')
+    await screen.findByText('Starly selvagem · Nv. 3')
     await userEvent.click(screen.getByRole('checkbox', { name: 'Som ao terminar' }))
 
     await waitFor(() =>

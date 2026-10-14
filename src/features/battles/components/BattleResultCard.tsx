@@ -42,7 +42,9 @@ export function BattleResultCard({ battle, onDismiss }: { battle: Battle; onDism
         <div className="flex flex-col items-center gap-2 rounded border border-slate-800 bg-slate-900/50 p-3">
           <SpeciesSprite species={wildSpecies} />
           <p className="text-slate-300">
-            {capture ? `${wildSpecies.name} capturado!` : `Um ${wildSpecies.name} apareceu!`}
+            {capture
+              ? `${wildSpecies.name} capturado!`
+              : `Um ${wildSpecies.name}${battle.wild_level ? ` Nv. ${battle.wild_level}` : ''} apareceu!`}
           </p>
           {!capture && (
             <button

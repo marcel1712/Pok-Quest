@@ -20,22 +20,22 @@ npm run dev
 
 ## Scripts
 
-| Script                   | Descrição                                                                        |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| `npm run dev`            | servidor de desenvolvimento                                                      |
-| `npm run build`          | typecheck + build de produção                                                    |
-| `npm run lint`           | ESLint                                                                           |
-| `npm run format`         | Prettier (escreve)                                                               |
-| `npm run format:check`   | Prettier (somente verifica)                                                      |
-| `npm run typecheck`      | TypeScript sem emitir arquivos                                                   |
-| `npm run test`           | Vitest (execução única)                                                          |
-| `npm run test:watch`     | Vitest (modo watch)                                                              |
-| `npm run test:e2e`       | Playwright (sobe o dev server automaticamente)                                   |
-| `npm run preview`        | servir o build de produção localmente                                            |
-| `npm run db:push`        | aplica migrations locais no projeto Supabase linkado                             |
-| `npm run db:types`       | regenera `src/shared/types/database.ts` a partir do schema remoto                |
-| `npm run catalog:import` | busca espécies na PokéAPI e imprime SQL de seed (revisar e colar numa migration) |
-| `npm run campaign:seed`  | valida o conteúdo da campanha e imprime o SQL de seed (colar numa migration)     |
+| Script                   | Descrição                                                                               |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `npm run dev`            | servidor de desenvolvimento                                                             |
+| `npm run build`          | typecheck + build de produção                                                           |
+| `npm run lint`           | ESLint                                                                                  |
+| `npm run format`         | Prettier (escreve)                                                                      |
+| `npm run format:check`   | Prettier (somente verifica)                                                             |
+| `npm run typecheck`      | TypeScript sem emitir arquivos                                                          |
+| `npm run test`           | Vitest (execução única)                                                                 |
+| `npm run test:watch`     | Vitest (modo watch)                                                                     |
+| `npm run test:e2e`       | Playwright (sobe o dev server automaticamente)                                          |
+| `npm run preview`        | servir o build de produção localmente                                                   |
+| `npm run db:push`        | aplica migrations locais no projeto Supabase linkado                                    |
+| `npm run db:types`       | regenera `src/shared/types/database.ts` a partir do schema remoto                       |
+| `npm run catalog:import` | importa a Pokédex do Platinum da PokéAPI e imprime o SQL de seed (colar numa migration) |
+| `npm run campaign:seed`  | valida o conteúdo da campanha e imprime o SQL de seed (colar numa migration)            |
 
 ## Banco de dados (Supabase)
 

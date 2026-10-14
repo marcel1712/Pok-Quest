@@ -15,6 +15,17 @@ export const campaignEncounterKindSchema = z.enum([
 
 const nodeIdSchema = z.string().regex(/^[a-z0-9-]+\.[a-z0-9-]+$/, 'expected "<region>.<slug>"')
 
+export const wildEncounterSchema = z
+  .object({
+    /** National Pokédex number; must exist in species-index.ts (the catalog). */
+    species: z.number().int().positive(),
+    minLevel: z.number().int().min(1).max(100),
+    maxLevel: z.number().int().min(1).max(100),
+    /** Relative appearance weight within the node — higher is more common. */
+    weight: z.number().int().min(1).max(100),
+  })
+  .refine((entry) => entry.minLevel <= entry.maxLevel, 'minLevel must not exceed maxLevel')
+
 export const campaignNodeSchema = z.object({
   id: nodeIdSchema,
   kind: campaignNodeKindSchema,
@@ -31,6 +42,8 @@ export const campaignNodeSchema = z.object({
   /** Repeatable nodes stay playable after completion (free exploration). */
   repeatable: z.boolean(),
   requires: z.array(nodeIdSchema),
+  /** Which species a wild encounter on this node can be. Required for wild nodes. */
+  wildEncounters: z.array(wildEncounterSchema).optional(),
 })
 
 export const campaignRegionSchema = z.object({
@@ -42,6 +55,7 @@ export const campaignRegionSchema = z.object({
   nodes: z.array(campaignNodeSchema).min(1),
 })
 
+export type WildEncounterContent = z.infer<typeof wildEncounterSchema>
 export type CampaignNodeKind = z.infer<typeof campaignNodeKindSchema>
 export type CampaignNodeContent = z.infer<typeof campaignNodeSchema>
 export type CampaignRegionContent = z.infer<typeof campaignRegionSchema>

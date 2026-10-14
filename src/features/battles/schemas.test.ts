@@ -12,7 +12,7 @@ describe('createBattleInputSchema', () => {
       encounterDifficulty: 1,
       minDifficulty: 1,
       taskId,
-      campaignNodeId: 'sinnoh.route-201',
+      encounterId: '323e4567-e89b-12d3-a456-426614174000',
     })
     expect(result.commitmentType).toBe('task')
   })
@@ -24,7 +24,7 @@ describe('createBattleInputSchema', () => {
       encounterDifficulty: 5,
       minDurationMinutes: 75,
       focusSessionId,
-      campaignNodeId: 'sinnoh.route-201',
+      encounterId: '323e4567-e89b-12d3-a456-426614174000',
     })
     expect(result.commitmentType).toBe('focusSession')
   })
@@ -40,7 +40,7 @@ describe('createBattleInputSchema', () => {
     ).toThrow()
   })
 
-  it('rejects a commitment without a campaign node', () => {
+  it('rejects a commitment without an encounter', () => {
     expect(() =>
       createBattleInputSchema.parse({
         commitmentType: 'task',
@@ -60,7 +60,7 @@ describe('createBattleInputSchema', () => {
         encounterDifficulty: 6,
         minDifficulty: 1,
         taskId,
-        campaignNodeId: 'sinnoh.route-201',
+        encounterId: '323e4567-e89b-12d3-a456-426614174000',
       }),
     ).toThrow()
   })
@@ -73,7 +73,7 @@ describe('createBattleInputSchema', () => {
         encounterDifficulty: 1,
         minDifficulty: 1,
         taskId,
-        campaignNodeId: 'sinnoh.route-201',
+        encounterId: '323e4567-e89b-12d3-a456-426614174000',
       }),
     ).toThrow()
   })
@@ -86,7 +86,7 @@ describe('createBattleInputSchema', () => {
         encounterDifficulty: 1,
         minDurationMinutes: 121,
         focusSessionId,
-        campaignNodeId: 'sinnoh.route-201',
+        encounterId: '323e4567-e89b-12d3-a456-426614174000',
       }),
     ).toThrow()
   })

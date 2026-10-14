@@ -19,6 +19,7 @@ vi.mock('@/features/pokemon/api/species-catalog-repository', () => ({
         sprite_url: null,
         official_artwork_url: null,
         is_starter: true,
+        is_legendary: false,
         evolves_to_pokedex_number: null,
         evolution_min_level: 18,
         catalog_version: 1,

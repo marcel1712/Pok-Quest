@@ -41,6 +41,7 @@ export type Database = {
           commitment_type: string
           created_at: string
           encounter_difficulty: number
+          encounter_id: string | null
           encounter_kind: string
           focus_session_id: string | null
           id: string
@@ -50,6 +51,7 @@ export type Database = {
           status: string
           task_id: string | null
           team_multiplier_applied: number | null
+          wild_level: number | null
           wild_species_pokedex_number: number | null
         }
         Insert: {
@@ -59,6 +61,7 @@ export type Database = {
           commitment_type: string
           created_at?: string
           encounter_difficulty: number
+          encounter_id?: string | null
           encounter_kind: string
           focus_session_id?: string | null
           id?: string
@@ -68,6 +71,7 @@ export type Database = {
           status?: string
           task_id?: string | null
           team_multiplier_applied?: number | null
+          wild_level?: number | null
           wild_species_pokedex_number?: number | null
         }
         Update: {
@@ -77,6 +81,7 @@ export type Database = {
           commitment_type?: string
           created_at?: string
           encounter_difficulty?: number
+          encounter_id?: string | null
           encounter_kind?: string
           focus_session_id?: string | null
           id?: string
@@ -86,6 +91,7 @@ export type Database = {
           status?: string
           task_id?: string | null
           team_multiplier_applied?: number | null
+          wild_level?: number | null
           wild_species_pokedex_number?: number | null
         }
         Relationships: [
@@ -94,6 +100,13 @@ export type Database = {
             columns: ['campaign_node_id']
             isOneToOne: false
             referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'battles_encounter_id_fkey'
+            columns: ['encounter_id']
+            isOneToOne: false
+            referencedRelation: 'encounters'
             referencedColumns: ['id']
           },
           {
@@ -175,6 +188,45 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'campaign_nodes'
             referencedColumns: ['id']
+          },
+        ]
+      }
+      campaign_node_wild_encounters: {
+        Row: {
+          max_level: number
+          min_level: number
+          node_id: string
+          pokedex_number: number
+          weight: number
+        }
+        Insert: {
+          max_level: number
+          min_level: number
+          node_id: string
+          pokedex_number: number
+          weight: number
+        }
+        Update: {
+          max_level?: number
+          min_level?: number
+          node_id?: string
+          pokedex_number?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_node_wild_encounters_node_id_fkey'
+            columns: ['node_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'campaign_node_wild_encounters_pokedex_number_fkey'
+            columns: ['pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
           },
         ]
       }
@@ -327,6 +379,67 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      encounters: {
+        Row: {
+          campaign_node_id: string
+          consumed_at: string | null
+          consumed_by_battle_id: string | null
+          created_at: string
+          encounter_difficulty: number
+          encounter_kind: string
+          id: string
+          owner_id: string
+          wild_level: number | null
+          wild_species_pokedex_number: number | null
+        }
+        Insert: {
+          campaign_node_id: string
+          consumed_at?: string | null
+          consumed_by_battle_id?: string | null
+          created_at?: string
+          encounter_difficulty: number
+          encounter_kind: string
+          id?: string
+          owner_id: string
+          wild_level?: number | null
+          wild_species_pokedex_number?: number | null
+        }
+        Update: {
+          campaign_node_id?: string
+          consumed_at?: string | null
+          consumed_by_battle_id?: string | null
+          created_at?: string
+          encounter_difficulty?: number
+          encounter_kind?: string
+          id?: string
+          owner_id?: string
+          wild_level?: number | null
+          wild_species_pokedex_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'encounters_campaign_node_id_fkey'
+            columns: ['campaign_node_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'encounters_consumed_by_battle_id_fkey'
+            columns: ['consumed_by_battle_id']
+            isOneToOne: false
+            referencedRelation: 'battles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'encounters_wild_species_pokedex_number_fkey'
+            columns: ['wild_species_pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
+          },
+        ]
       }
       focus_sessions: {
         Row: {
@@ -561,6 +674,7 @@ export type Database = {
           evolution_min_level: number | null
           evolves_to_pokedex_number: number | null
           imported_at: string
+          is_legendary: boolean
           is_starter: boolean
           name: string
           official_artwork_url: string | null
@@ -573,6 +687,7 @@ export type Database = {
           evolution_min_level?: number | null
           evolves_to_pokedex_number?: number | null
           imported_at?: string
+          is_legendary?: boolean
           is_starter?: boolean
           name: string
           official_artwork_url?: string | null
@@ -585,6 +700,7 @@ export type Database = {
           evolution_min_level?: number | null
           evolves_to_pokedex_number?: number | null
           imported_at?: string
+          is_legendary?: boolean
           is_starter?: boolean
           name?: string
           official_artwork_url?: string | null
@@ -723,6 +839,31 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      current_campaign_objective: {
+        Args: { p_owner_id: string }
+        Returns: string
+      }
+      get_or_create_encounter: {
+        Args: never
+        Returns: {
+          campaign_node_id: string
+          consumed_at: string | null
+          consumed_by_battle_id: string | null
+          created_at: string
+          encounter_difficulty: number
+          encounter_kind: string
+          id: string
+          owner_id: string
+          wild_level: number | null
+          wild_species_pokedex_number: number | null
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'encounters'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       resolve_pending_battle: {
         Args: {
           p_focus_session_id: string
@@ -732,6 +873,10 @@ export type Database = {
           p_task_id: string
         }
         Returns: undefined
+      }
+      roll_wild_encounter: {
+        Args: { p_node_id: string }
+        Returns: Record<string, unknown>
       }
       swap_party_positions: {
         Args: { p_pokemon_a: string; p_pokemon_b: string }

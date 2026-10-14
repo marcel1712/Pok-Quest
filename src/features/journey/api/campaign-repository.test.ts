@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getCampaignContent, listCampaignProgress } from './campaign-repository'
+import {
+  getCampaignContent,
+  getCurrentEncounter,
+  listCampaignProgress,
+} from './campaign-repository'
 
 type QueryResult = { data: unknown; error: unknown }
 
@@ -13,13 +17,18 @@ function createQueryBuilderMock(result: QueryResult) {
 }
 
 const fromMock = vi.fn()
+const rpcMock = vi.fn()
 
 vi.mock('@/shared/lib/supabase-client', () => ({
-  supabase: { from: (...args: unknown[]) => fromMock(...args) },
+  supabase: {
+    from: (...args: unknown[]) => fromMock(...args),
+    rpc: (...args: unknown[]) => rpcMock(...args),
+  },
 }))
 
 beforeEach(() => {
   fromMock.mockReset()
+  rpcMock.mockReset()
 })
 
 describe('getCampaignContent', () => {
@@ -66,5 +75,24 @@ describe('listCampaignProgress', () => {
   it('throws on error', async () => {
     fromMock.mockReturnValue(createQueryBuilderMock({ data: null, error: { message: 'boom' } }))
     await expect(listCampaignProgress()).rejects.toEqual({ message: 'boom' })
+  })
+})
+
+describe('getCurrentEncounter', () => {
+  it('asks the server for the encounter without sending anything', async () => {
+    rpcMock.mockResolvedValue({ data: { id: 'encounter-1', wild_level: 3 }, error: null })
+
+    expect(await getCurrentEncounter()).toEqual({ id: 'encounter-1', wild_level: 3 })
+    expect(rpcMock).toHaveBeenCalledWith('get_or_create_encounter')
+  })
+
+  it('treats a row of nulls (no campaign content) as no encounter', async () => {
+    rpcMock.mockResolvedValue({ data: { id: null, wild_level: null }, error: null })
+    expect(await getCurrentEncounter()).toBeNull()
+  })
+
+  it('throws on error', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'boom' } })
+    await expect(getCurrentEncounter()).rejects.toEqual({ message: 'boom' })
   })
 })

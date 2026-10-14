@@ -15,7 +15,9 @@ import { useActiveFocusSession } from '@/features/focus/hooks/use-active-focus-s
 import { useCompletionChime } from '@/features/focus/hooks/use-completion-chime'
 import { useStartFocusSession } from '@/features/focus/hooks/use-focus-session-mutations'
 import { useSessionClock } from '@/features/focus/hooks/use-session-clock'
+import { useCurrentEncounter } from '@/features/journey/hooks/use-current-encounter'
 import { useJourney } from '@/features/journey/hooks/use-journey'
+import { useSpeciesByPokedexNumber } from '@/features/pokemon/hooks/use-species-catalog'
 import {
   useFocusPreferences,
   useUpdateFocusPreferences,
@@ -41,16 +43,23 @@ export function FocusPage() {
   const updatePreferences = useUpdateFocusPreferences()
   const clock = useSessionClock(activeSession ?? null)
   const [rest, setRest] = useState<RestState>({ phase: 'none' })
-  // The encounter is whatever the campaign says comes next — derived from server
-  // state, so a refresh never rerolls it. No campaign (still loading, failed, empty)
-  // just means focusing without an encounter: productivity never waits on the RPG.
-  const { objective, isLoading: isJourneyLoading } = useJourney()
-  const encounter: Encounter | null = objective
+  // The encounter is generated and stored by the server (where it happens, and which
+  // wild Pokémon appears), so a refresh never rerolls it. No encounter (still loading,
+  // failed, no campaign) just means focusing without one: productivity never waits on
+  // the RPG.
+  const { data: currentEncounter, isLoading: isEncounterLoading } = useCurrentEncounter()
+  const { journey } = useJourney()
+  const { data: wildSpecies } = useSpeciesByPokedexNumber(
+    currentEncounter?.wild_species_pokedex_number,
+  )
+  const encounter: Encounter | null = currentEncounter
     ? {
-        kind: objective.node.encounter_kind as EncounterKind,
-        difficulty: objective.node.encounter_difficulty,
+        kind: currentEncounter.encounter_kind as EncounterKind,
+        difficulty: currentEncounter.encounter_difficulty,
       }
     : null
+  const locationName = journey.find((entry) => entry.node.id === currentEncounter?.campaign_node_id)
+    ?.node.title
   const [encounterSkipped, setEncounterSkipped] = useState(false)
   const startSession = useStartFocusSession()
   const createBattle = useCreateBattle()
@@ -66,8 +75,8 @@ export function FocusPage() {
   }
 
   function handleAcceptEncounter(commitment: Commitment) {
-    if (commitment.type !== 'focusSession' || !objective || !encounter) return
-    const campaignNodeId = objective.node.id
+    if (commitment.type !== 'focusSession' || !currentEncounter || !encounter) return
+    const encounterId = currentEncounter.id
     startSession.mutate(
       { plannedDurationSeconds: commitment.minDurationMinutes * 60, taskId: null },
       {
@@ -78,7 +87,7 @@ export function FocusPage() {
             encounterDifficulty: encounter.difficulty,
             minDurationMinutes: commitment.minDurationMinutes,
             focusSessionId: session.id,
-            campaignNodeId,
+            encounterId,
           })
         },
       },
@@ -89,10 +98,12 @@ export function FocusPage() {
     if (!activeSession) return
     queryClient.invalidateQueries({ queryKey: queryKeys.battles.forFocusSession(activeSession.id) })
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.progress() })
+    // A victory consumes the encounter; the next one is generated on this refetch.
+    queryClient.invalidateQueries({ queryKey: queryKeys.campaign.encounter() })
     setRest({ phase: 'battleResult', focusSessionId: activeSession.id })
   }
 
-  const isIdleLoading = isLoading || (!activeSession && isJourneyLoading)
+  const isIdleLoading = isLoading || (!activeSession && isEncounterLoading)
   const isIdle = !isIdleLoading && !activeSession && rest.phase === 'none'
 
   return (
@@ -119,10 +130,15 @@ export function FocusPage() {
         </p>
       )}
 
-      {isIdle && encounter && objective && !encounterSkipped && (
+      {isIdle && encounter && currentEncounter && !encounterSkipped && (
         <EncounterCard
           encounter={encounter}
-          locationName={objective.node.title}
+          locationName={locationName}
+          wild={
+            wildSpecies && currentEncounter.wild_level
+              ? { species: wildSpecies, level: currentEncounter.wild_level }
+              : undefined
+          }
           party={NO_PARTY}
           commitmentType="focusSession"
           onAccept={handleAcceptEncounter}

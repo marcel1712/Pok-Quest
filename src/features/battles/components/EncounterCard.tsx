@@ -1,10 +1,13 @@
 import { getViableCommitments } from '../engine'
 import { ENCOUNTER_LABELS } from '../labels'
+import { SpeciesSprite } from '@/features/pokemon/components/SpeciesSprite'
+import type { SpeciesCatalogEntry } from '@/features/pokemon/types'
 import type { Commitment, Encounter, PartySnapshot } from '../types'
 
 export function EncounterCard({
   encounter,
   locationName,
+  wild,
   party,
   commitmentType,
   onAccept,
@@ -13,6 +16,8 @@ export function EncounterCard({
   encounter: Encounter
   /** Where in the campaign this encounter happens, e.g. "Rota 201". */
   locationName?: string
+  /** The wild Pokémon already rolled (server-side) for this encounter, if any. */
+  wild?: { species: SpeciesCatalogEntry; level: number }
   party: PartySnapshot
   /** Only the commitment of this type is offered — the caller already knows which
    * activity (task or focus session) this card is being shown for. */
@@ -26,12 +31,18 @@ export function EncounterCard({
   return (
     <div className="flex flex-col gap-3 rounded border border-slate-800 p-4">
       <div className="flex items-center gap-3">
-        <span className="text-3xl" aria-hidden="true">
-          {glyph}
-        </span>
+        {wild ? (
+          <SpeciesSprite species={wild.species} />
+        ) : (
+          <span className="text-3xl" aria-hidden="true">
+            {glyph}
+          </span>
+        )}
         <div>
           {locationName && <p className="text-xs text-slate-400">{locationName}</p>}
-          <p className="font-semibold text-slate-100">{label}</p>
+          <p className="font-semibold text-slate-100">
+            {wild ? `${wild.species.name} selvagem · Nv. ${wild.level}` : label}
+          </p>
           <p className="text-sm text-slate-400">
             Dificuldade {encounter.difficulty}/5 · {'●'.repeat(encounter.difficulty)}
             {'○'.repeat(5 - encounter.difficulty)}

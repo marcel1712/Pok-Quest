@@ -1,4 +1,5 @@
 import type { CampaignNodeContent, CampaignRegionContent } from './schema.ts'
+import { SINNOH_WILD } from './sinnoh-wild.ts'
 
 // The whole Pokémon Platinum storyline, in the games' order: eight badges, the Team
 // Galactic arc, the Distortion World, the Pokémon League and the Stark Mountain
@@ -28,6 +29,8 @@ function route(
     encounter: { kind: encounterKind, difficulty },
     requiredVictories,
     repeatable: true,
+    // A wild route without a table is caught by validateCampaignRegion.
+    ...(encounterKind === 'wild' ? { wildEncounters: SINNOH_WILD[slug] ?? [] } : {}),
   }
 }
 
@@ -108,7 +111,7 @@ function chain(steps: Step[]): CampaignNodeContent[] {
 export const sinnoh: CampaignRegionContent = {
   id: 'sinnoh',
   name: 'Sinnoh',
-  contentVersion: 2,
+  contentVersion: 3,
   nodes: chain([
     // --- Capítulo 1: primeiros passos e a Insígnia do Carvão ---
     story(

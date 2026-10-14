@@ -29,6 +29,7 @@ function species(pokedexNumber: number, name: string, type: string, isStarter: b
     sprite_url: null,
     official_artwork_url: null,
     is_starter: isStarter,
+    is_legendary: false,
     evolves_to_pokedex_number: null,
     evolution_min_level: isStarter ? 16 : null,
     catalog_version: 1,

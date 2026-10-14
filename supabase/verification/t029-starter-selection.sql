@@ -11,12 +11,14 @@ declare
   pokemon public.owned_pokemon;
   progress public.game_progress;
   got_error boolean;
+  owned_before integer;
 begin
   select id into test_owner from auth.users limit 1;
 
   begin
     delete from public.game_progress where owner_id = test_owner;
     update public.owned_pokemon set party_position = null where owner_id = test_owner;
+    select count(*) into owned_before from public.owned_pokemon where owner_id = test_owner;
 
     -- 1. Without an authenticated user there is nobody to give a starter to.
     set local role authenticated;
@@ -65,7 +67,7 @@ begin
     end;
     if not got_error then raise exception 'FAIL: the same starter was granted twice'; end if;
 
-    if (select count(*) from public.owned_pokemon where pokedex_number in (387, 390, 393) and level = 5) != 1 then
+    if (select count(*) from public.owned_pokemon where owner_id = test_owner) != owned_before + 1 then
       raise exception 'FAIL: expected exactly one starter Pokémon after the retries';
     end if;
     if (select starter_pokedex_number from public.game_progress) != 387 then

@@ -57,6 +57,7 @@ function makeSpecies(pokedexNumber: number, name: string) {
     sprite_url: null,
     official_artwork_url: null,
     is_starter: pokedexNumber === 387,
+    is_legendary: false,
     evolves_to_pokedex_number: null,
     evolution_min_level: null,
     catalog_version: 1,

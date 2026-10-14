@@ -166,7 +166,10 @@ A campanha é uma lista ordenada de **nós** (cidade/história, rota, rival, gin
 - **Repetição:** apenas rotas são repetíveis. Rival, ginásio e marcos de história não aceitam nova batalha depois de concluídos.
 - **Compromisso mínimo:** o compromisso declarado não pode ser menor que a dificuldade efetiva do nó (mesma redução por time descrita acima).
 
-Tudo isso é aplicado no banco (`enforce_campaign_node_on_battle` e `record_campaign_progress_on_battle_resolved`). O conteúdo atual está em `src/features/journey/content/sinnoh.ts`.
+- **Encontro selvagem:** cada rota tem uma tabela de espécies com faixa de nível e peso. A chance de uma espécie é o peso dela dividido pela soma dos pesos da tabela; o nível é sorteado uniformemente na faixa. O encontro é sorteado uma vez, guardado, e só é trocado depois de uma vitória. Lendários nunca entram em tabela.
+- **Captura:** o Pokémon capturado chega no nível em que foi encontrado.
+
+Tudo isso é aplicado no banco (`enforce_campaign_node_on_battle` e `record_campaign_progress_on_battle_resolved`). As tabelas ficam em `src/features/journey/content/sinnoh-wild.ts`. O conteúdo atual está em `src/features/journey/content/sinnoh.ts`.
 
 ## O que fica fora do T-021
 
@@ -174,3 +177,7 @@ Tudo isso é aplicado no banco (`enforce_campaign_node_on_battle` e `record_camp
 - Não existe catálogo de Pokémon/tipos/vantagem elemental (T-024) — `PartySnapshot` é deliberadamente simplificado a `averageLevel`, sem tipos nem matchups.
 - `TASK_XP_PER_DIFFICULTY`, `FOCUS_XP_PER_MINUTE`, etc. são constantes TypeScript, não uma tabela `game_settings` versionada no banco — ver `docs/DECISIONS.md`. `REWARD_RULES_VERSION` (hoje `1`) é um marcador de "essas constantes mudaram" pra humanos, não uma trava de código — eventos de recompensa já gravam seu `amount` final, então uma mudança de constante nunca corrompe recompensas passadas (T-027).
 - `TasksPage` ainda não oferece nenhum jeito de vincular um encontro a uma tarefa (decisão do T-023) — então, na prática hoje, o caminho de recompensa de tarefa só é alcançável via dados de teste direto no banco, não pela UI real. O anti-fracionamento e as simulações deste documento já cobrem esse caminho preventivamente, pra quando essa integração existir.
+
+## Evolução sem nível (catálogo)
+
+O jogo só evolui por nível. Para espécies que nos jogos originais evoluem por pedra, troca, amizade, item ou local, o catálogo usa um nível substituto: **25** se a espécie é a base da linha evolutiva, **40** nos demais casos, e nunca menos de 10 níveis depois da evolução que a originou. Linhas ramificadas têm um único destino (a primeira evolução listada pela PokéAPI que esteja na Pokédex do Platinum). Os valores são gerados por `scripts/import-species-catalog.ts`.

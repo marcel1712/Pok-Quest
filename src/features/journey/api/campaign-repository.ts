@@ -1,5 +1,5 @@
 import { supabase } from '@/shared/lib/supabase-client'
-import type { CampaignContent, CampaignNodeProgress } from '../types'
+import type { CampaignContent, CampaignEncounter, CampaignNodeProgress } from '../types'
 
 /** Reference content, seeded only by migrations generated from `content/`. */
 export async function getCampaignContent(): Promise<CampaignContent> {
@@ -18,4 +18,17 @@ export async function listCampaignProgress(): Promise<CampaignNodeProgress[]> {
   const { data, error } = await supabase.from('campaign_node_progress').select('*')
   if (error) throw error
   return data
+}
+
+/**
+ * The player's current encounter, generated and stored by the database the first time
+ * it is asked for and returned unchanged until a battle against it is won — calling
+ * this again (a refresh, another device) never rerolls it. `null` when there is no
+ * campaign content to play.
+ */
+export async function getCurrentEncounter(): Promise<CampaignEncounter | null> {
+  const { data, error } = await supabase.rpc('get_or_create_encounter')
+  if (error) throw error
+  // A SQL function returning a null composite arrives as a row of nulls.
+  return data?.id ? data : null
 }

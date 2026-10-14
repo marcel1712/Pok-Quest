@@ -1,4 +1,5 @@
 import { campaignRegionSchema } from './schema.ts'
+import { SPECIES_INDEX } from './species-index.ts'
 import type { CampaignNodeContent, CampaignNodeKind, CampaignRegionContent } from './schema.ts'
 
 const ALLOWED_ENCOUNTER_KINDS: Record<
@@ -38,6 +39,27 @@ export function validateCampaignRegion(input: unknown): string[] {
     }
     if (node.repeatable && node.kind !== 'route') {
       issues.push(`${node.id}: only route nodes can be repeatable`)
+    }
+    const wildEncounters = node.wildEncounters ?? []
+    if (node.encounter.kind === 'wild' && wildEncounters.length === 0) {
+      issues.push(node.id + ': a wild node needs at least one wild encounter entry')
+    }
+    if (node.encounter.kind !== 'wild' && wildEncounters.length > 0) {
+      issues.push(node.id + ': only wild nodes can list wild encounters')
+    }
+    const seenSpecies = new Set<number>()
+    for (const entry of wildEncounters) {
+      const species = SPECIES_INDEX[entry.species]
+      if (!species) {
+        issues.push(node.id + ': species #' + entry.species + ' is not in the catalog')
+      } else if (species.legendary) {
+        // Legendaries only ever appear as scripted story milestones, never by chance.
+        issues.push(node.id + ': ' + species.name + ' is legendary and cannot be a wild encounter')
+      }
+      if (seenSpecies.has(entry.species)) {
+        issues.push(node.id + ': species #' + entry.species + ' is listed twice')
+      }
+      seenSpecies.add(entry.species)
     }
     if (new Set(node.requires).size !== node.requires.length) {
       issues.push(`${node.id}: duplicate prerequisite`)

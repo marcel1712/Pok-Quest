@@ -40,7 +40,7 @@ describe('createBattle', () => {
       encounterDifficulty: 3,
       minDifficulty: 3,
       taskId: 'task-1',
-      campaignNodeId: 'sinnoh.route-201',
+      encounterId: 'encounter-1',
     })
 
     expect(builder.insert).toHaveBeenCalledWith({
@@ -50,7 +50,7 @@ describe('createBattle', () => {
       commitment_type: 'task',
       commitment_min_difficulty: 3,
       task_id: 'task-1',
-      campaign_node_id: 'sinnoh.route-201',
+      encounter_id: 'encounter-1',
     })
   })
 
@@ -64,7 +64,7 @@ describe('createBattle', () => {
       encounterDifficulty: 1,
       minDurationMinutes: 15,
       focusSessionId: 'session-1',
-      campaignNodeId: 'sinnoh.route-201',
+      encounterId: 'encounter-1',
     })
 
     expect(builder.insert).toHaveBeenCalledWith({
@@ -74,7 +74,7 @@ describe('createBattle', () => {
       commitment_type: 'focusSession',
       commitment_min_duration_minutes: 15,
       focus_session_id: 'session-1',
-      campaign_node_id: 'sinnoh.route-201',
+      encounter_id: 'encounter-1',
     })
   })
 
@@ -92,7 +92,7 @@ describe('createBattle', () => {
         encounterDifficulty: 1,
         minDifficulty: 1,
         taskId: 'task-1',
-        campaignNodeId: 'sinnoh.route-201',
+        encounterId: 'encounter-1',
       }),
     ).rejects.toBeTruthy()
   })
