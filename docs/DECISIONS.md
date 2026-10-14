@@ -396,3 +396,39 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Reserva em cadeia:** se o GIF falhar ao carregar, cai para o sprite estático, depois para a arte oficial, depois para o glifo genérico.
 **Tamanho fixo:** os GIFs não são quadrados e o reset do Tailwind (`img { height: auto }`) deixava cada um com uma altura, desalinhando a fileira; a imagem agora tem largura e altura explícitas com `object-contain`. No Dashboard o sprite do time passou de 48 para 96 px (o mesmo do próximo encontro), em 3 colunas no celular e em telas largas e 6 no tablet, para caber sem estourar o card.
 **Custo:** cada GIF tem de 20 a 110 kB e continua vindo do CDN da PokéAPI no GitHub; só os do time ativo (até 6) são carregados.
+
+## 2026-10-14 — Gargalos de navegação e dados (T-034): medição antes/depois no build de produção
+
+**Como foi medido:** `npm run build && npm run perf:measure` (`scripts/measure-navigation.ts`) abre o build de produção num Chromium, com sessão falsa e a API do Supabase simulada com 150 ms de atraso por resposta. Não toca o projeto real e é repetível. "Shell" é o tempo até o título da página; "conteúdo" é quando a última resposta da API chegou; "profundidade" é quantas requisições tiveram de acontecer em sequência. O "antes" é o commit `70fa49d`, construído numa worktree à parte e medido com o mesmo script.
+
+Carga a frio (navegador novo, direto na URL):
+
+| Rota        | JS antes → depois (kB) | Requisições antes → depois | Conteúdo antes → depois (ms) | Profundidade antes → depois |
+| ----------- | ---------------------- | -------------------------- | ---------------------------- | --------------------------- |
+| `/`         | 829 → 669              | 13 → 13                    | 501 → 516                    | 2 → 2                       |
+| `/tasks`    | 829 → 652              | 2 → 2                      | 296 → 284                    | 1 → 1                       |
+| `/focus`    | 829 → 670              | 9 → 9                      | 484 → 443                    | 2 → 2                       |
+| `/team`     | 829 → 653              | 10 → 4                     | 514 → 277                    | 3 → 1                       |
+| `/journey`  | 829 → 653              | 7 → 6                      | 293 → 278                    | 1 → 1                       |
+| `/settings` | 829 → 645              | 1 → 1                      | 289 → 260                    | 1 → 1                       |
+
+Navegando dentro do app a partir do Dashboard: antes e depois, Tarefas, Foco, Jornada e Configurações não fazem nenhuma requisição (tudo já em cache), e voltar a qualquer página também não. A exceção era Equipe, que na primeira visita fazia 5 consultas de espécie (uma por Pokémon); agora faz 1 (o catálogo, para a grade da Pokédex).
+
+**O que mudou:**
+
+- **Consulta por Pokémon (N+1):** `getSpeciesByPokedexNumber` agrupa as buscas pedidas no mesmo instante numa única requisição `in (...)`; e o hook não faz requisição nenhuma quando o catálogo inteiro já está em cache ou a caminho (página Equipe).
+- **Catálogo inteiro sem necessidade:** o cartão de escolha do inicial só busca o catálogo (210 espécies) enquanto não há inicial; antes Dashboard e Jornada o baixavam sempre. O card Equipe do Dashboard busca só as espécies do time.
+- **Bundle por rota:** cada página virou um chunk carregado sob demanda (`src/app/page-loaders.ts`), e a navegação pré-carrega o código da página ao passar o mouse ou focar o link — só o código, nunca os dados.
+- **Biblioteca Motion fora do bundle:** era usada para uma única animação (a insígnia) e para ler a preferência de movimento reduzido, ao custo de cerca de 130 kB. A insígnia virou uma animação CSS (`animate-pop`) e a preferência é lida por um hook próprio (`useReducedMotion`). O pacote continua no `package.json`, sem uso — remover é uma decisão do usuário.
+- **Dado desatualizado corrigido:** ao confirmar uma sessão com batalha, o cache de `owned_pokemon` não era invalidado, então nível/XP do time podiam aparecer velhos por até 1 minuto.
+- **Listas que só crescem:** tarefas concluídas e arquivadas passaram a vir limitadas às 200 mais recentes (por `updated_at`), com aviso quando o limite é atingido. Pendentes continuam completas.
+
+**O que não melhorou, e por quê:**
+
+- O Dashboard continua com 13 requisições e o mesmo tempo: ele agrega quatro domínios, todas em paralelo. A diferença está no tamanho de uma delas (5 espécies em vez de 210), que a simulação com catálogo pequeno não mostra.
+- Foco e Dashboard continuam com profundidade 2: a espécie do Pokémon selvagem só é conhecida depois que o encontro chega. Depois da primeira vez fica em cache por 24h.
+- Os cerca de 650 kB restantes são bibliotecas usadas em toda rota: Supabase (~250 kB), React + Router + TanStack Query (~320 kB) e Zod (~85 kB, por validar as preferências no layout raiz).
+
+**Limites da medição:** API simulada com atraso fixo e dados pequenos; não mede o Supabase real, rede móvel nem um celular de verdade (o item "comparar em celular real/throttling" do plano não foi feito). Não usei o profiler do React: com as listas limitadas (5 no Dashboard, 200 no histórico) não vi motivo para memoização.
+
+**Lição do próprio processo:** a primeira comparação antes/depois saiu idêntica porque o `vite preview` da execução anterior continuou vivo no Windows e serviu o build errado. O script passou a subir o preview dentro do próprio processo e fechá-lo no fim.

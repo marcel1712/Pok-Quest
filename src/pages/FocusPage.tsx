@@ -108,6 +108,8 @@ export function FocusPage() {
     // A victory consumes the encounter; the next one is generated on this refetch.
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.encounter() })
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.badges() })
+    // The battle also granted XP (and possibly a level or a pending evolution).
+    queryClient.invalidateQueries({ queryKey: queryKeys.ownedPokemon.all })
     setRest({ phase: 'battleResult', focusSessionId: activeSession.id })
   }
 

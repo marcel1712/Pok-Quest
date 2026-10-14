@@ -17,7 +17,8 @@ const TYPE_LABELS: Record<string, string> = {
  */
 export function StarterOnboarding() {
   const { data: gameProgress, isSuccess } = useGameProgress()
-  const { data: species } = useSpeciesCatalog()
+  const needsChoice = isSuccess && !gameProgress
+  const { data: species } = useSpeciesCatalog({ enabled: needsChoice })
   const chooseStarter = useChooseStarter()
   const [selected, setSelected] = useState<number | null>(null)
 

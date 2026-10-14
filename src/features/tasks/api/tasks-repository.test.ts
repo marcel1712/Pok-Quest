@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { TASK_HISTORY_LIMIT } from '../limits'
 import { createTask, getTaskById, listTasks, updateTask } from './tasks-repository'
 
 type QueryResult = { data: unknown; error: unknown }
@@ -7,6 +8,7 @@ function createQueryBuilderMock(result: QueryResult) {
   const builder = {
     select: vi.fn(() => builder),
     order: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     insert: vi.fn(() => builder),
     update: vi.fn(() => builder),
@@ -49,6 +51,26 @@ describe('listTasks', () => {
     await listTasks({ status: 'pending' })
 
     expect(builder.eq).toHaveBeenCalledWith('status', 'pending')
+    expect(builder.order).toHaveBeenCalledWith('due_date', { ascending: true })
+    expect(builder.limit).not.toHaveBeenCalled()
+  })
+
+  it.each(['completed', 'archived'] as const)(
+    'caps the %s history to the most recent tasks',
+    async (status) => {
+      const builder = createQueryBuilderMock({ data: [], error: null })
+      fromMock.mockReturnValue(builder)
+
+      await listTasks({ status })
+
+      expect(builder.eq).toHaveBeenCalledWith('status', status)
+      expect(builder.order).toHaveBeenCalledWith('updated_at', { ascending: false })
+      expect(builder.limit).toHaveBeenCalledWith(TASK_HISTORY_LIMIT)
+    },
+  )
+
+  it('keeps the test suite honest about the cap value', () => {
+    expect(TASK_HISTORY_LIMIT).toBe(200)
   })
 
   it('throws when the query returns an error', async () => {

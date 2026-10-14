@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MotionConfig } from 'motion/react'
 import { describe, expect, it } from 'vitest'
+import { ReducedMotionPreferenceContext } from '@/shared/hooks/use-reduced-motion'
 import type { SpeciesCatalogEntry } from '../types'
 import { SpeciesSprite } from './SpeciesSprite'
 
@@ -69,12 +69,12 @@ describe('SpeciesSprite', () => {
 
   it('does not animate when the reduce-motion preference is on', () => {
     render(
-      <MotionConfig reducedMotion="always">
+      <ReducedMotionPreferenceContext value={true}>
         <SpeciesSprite
           species={makeSpecies({ animated_sprite_url: 'https://example.com/387.gif' })}
           animated
         />
-      </MotionConfig>,
+      </ReducedMotionPreferenceContext>,
     )
     expect(screen.getByRole('img', { name: 'Turtwig' })).toHaveAttribute(
       'src',

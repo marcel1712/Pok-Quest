@@ -1,4 +1,5 @@
 import { supabase } from '@/shared/lib/supabase-client'
+import { TASK_HISTORY_LIMIT } from '../limits'
 import type { Task, TaskStatus, TaskUpdate } from '../types'
 
 export type TaskListFilters = {
@@ -6,7 +7,17 @@ export type TaskListFilters = {
 }
 
 export async function listTasks(filters: TaskListFilters = {}): Promise<Task[]> {
-  let query = supabase.from('tasks').select('*').order('due_date', { ascending: true })
+  const isHistory = filters.status === 'completed' || filters.status === 'archived'
+
+  // Pending tasks are a working list: all of them, by due date. History is unbounded,
+  // so it is capped and shown newest first (T-034).
+  let query = isHistory
+    ? supabase
+        .from('tasks')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(TASK_HISTORY_LIMIT)
+    : supabase.from('tasks').select('*').order('due_date', { ascending: true })
 
   if (filters.status) {
     query = query.eq('status', filters.status)

@@ -78,7 +78,11 @@ function renderPage() {
 beforeEach(() => {
   listOwnedPokemonMock.mockReset()
   confirmEvolutionMock.mockReset()
-  listSpeciesCatalogMock.mockReset().mockResolvedValue([])
+  // The Team page loads the whole catalog for its Pokédex grid; every species shown
+  // elsewhere on the page is read from that one response.
+  listSpeciesCatalogMock
+    .mockReset()
+    .mockResolvedValue([makeSpecies(387, 'Turtwig'), makeSpecies(389, 'Torterra')] as never)
   getSpeciesByPokedexNumberMock
     .mockReset()
     .mockImplementation(
@@ -99,6 +103,8 @@ describe('TeamPage', () => {
     expect(
       await screen.findByText('Turtwig está pronto para evoluir para Torterra!'),
     ).toBeInTheDocument()
+    expect(listSpeciesCatalogMock).toHaveBeenCalledTimes(1)
+    expect(getSpeciesByPokedexNumberMock).not.toHaveBeenCalled()
   })
 
   it('confirms the evolution from the team page', async () => {
@@ -116,7 +122,7 @@ describe('TeamPage', () => {
     listOwnedPokemonMock.mockResolvedValue([makePokemon()])
     renderPage()
 
-    await screen.findByText('Turtwig')
+    expect((await screen.findAllByText('Turtwig')).length).toBeGreaterThan(0)
     expect(screen.queryByText(/pronto para evoluir/)).not.toBeInTheDocument()
   })
 })

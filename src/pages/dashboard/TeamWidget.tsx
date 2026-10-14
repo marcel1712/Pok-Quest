@@ -1,16 +1,34 @@
 import { SpeciesSprite } from '@/features/pokemon/components/SpeciesSprite'
 import { useOwnedPokemon } from '@/features/pokemon/hooks/use-owned-pokemon'
-import { useSpeciesCatalog } from '@/features/pokemon/hooks/use-species-catalog'
+import { useSpeciesByPokedexNumber } from '@/features/pokemon/hooks/use-species-catalog'
+import type { OwnedPokemon } from '@/features/pokemon/types'
 import { computeXpProgress } from '@/features/pokemon/xp'
 import { WidgetCard } from './WidgetCard'
 import { ProgressBar } from '@/shared/ui/ProgressBar'
 
+function TeamMember({ pokemon }: { pokemon: OwnedPokemon }) {
+  // Lookups made in the same tick are batched by the repository into one request, and
+  // are free when the Team page already cached the catalog.
+  const { data: species } = useSpeciesByPokedexNumber(pokemon.pokedex_number)
+  const name = pokemon.nickname ?? species?.name ?? '…'
+  const progress = Math.round(computeXpProgress(pokemon.level, pokemon.xp).progress * 100)
+
+  return (
+    <li className="flex min-w-0 flex-col items-center gap-1 text-center">
+      {species && <SpeciesSprite species={species} size={96} animated />}
+      <span className="w-full truncate text-xs text-ink">{name}</span>
+      <span className="text-xs text-ink-muted">Nv. {pokemon.level}</span>
+      <ProgressBar
+        label={`XP de ${pokemon.nickname ?? species?.name ?? 'Pokémon'}`}
+        value={progress}
+        size="sm"
+      />
+    </li>
+  )
+}
+
 export function TeamWidget({ className }: { className?: string }) {
   const { data: pokemon, isLoading, error, refetch } = useOwnedPokemon()
-  // One catalog request (cached for the day, shared with the Team page) instead of one
-  // lookup per party member.
-  const { data: species } = useSpeciesCatalog()
-
   const party = (pokemon ?? [])
     .filter((entry) => entry.party_position !== null)
     .sort((a, b) => (a.party_position ?? 0) - (b.party_position ?? 0))
@@ -38,24 +56,9 @@ export function TeamWidget({ className }: { className?: string }) {
           aria-label="Time ativo"
           className="grid grid-cols-3 gap-x-1 gap-y-3 sm:grid-cols-6 sm:gap-x-2 lg:grid-cols-3"
         >
-          {party.map((entry) => {
-            const entrySpecies = species?.find((s) => s.pokedex_number === entry.pokedex_number)
-            const progress = Math.round(computeXpProgress(entry.level, entry.xp).progress * 100)
-            return (
-              <li key={entry.id} className="flex min-w-0 flex-col items-center gap-1 text-center">
-                {entrySpecies && <SpeciesSprite species={entrySpecies} size={96} animated />}
-                <span className="w-full truncate text-xs text-ink">
-                  {entry.nickname ?? entrySpecies?.name ?? '…'}
-                </span>
-                <span className="text-xs text-ink-muted">Nv. {entry.level}</span>
-                <ProgressBar
-                  label={`XP de ${entry.nickname ?? entrySpecies?.name ?? 'Pokémon'}`}
-                  value={progress}
-                  size="sm"
-                />
-              </li>
-            )
-          })}
+          {party.map((entry) => (
+            <TeamMember key={entry.id} pokemon={entry} />
+          ))}
         </ul>
       )}
 

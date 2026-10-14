@@ -1,5 +1,5 @@
-import { useReducedMotionConfig } from 'motion/react'
 import { useState } from 'react'
+import { useReducedMotion } from '@/shared/hooks/use-reduced-motion'
 import type { SpeciesCatalogEntry } from '../types'
 
 /**
@@ -19,7 +19,7 @@ export function SpeciesSprite({
   size?: number
   animated?: boolean
 }) {
-  const reduceMotion = useReducedMotionConfig()
+  const reduceMotion = useReducedMotion()
   const [failedSources, setFailedSources] = useState<string[]>([])
 
   const candidates = [

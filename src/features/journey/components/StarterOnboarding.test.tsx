@@ -128,8 +128,9 @@ describe('StarterOnboarding', () => {
     const { container } = renderOnboarding()
 
     await waitFor(() => expect(getGameProgressMock).toHaveBeenCalled())
-    await waitFor(() => expect(listSpeciesCatalogMock).toHaveBeenCalled())
     expect(container).toBeEmptyDOMElement()
+    // The 210-species catalog is only worth fetching while there is a choice to make.
+    expect(listSpeciesCatalogMock).not.toHaveBeenCalled()
   })
 
   it('hides itself, without an error, when the server says a starter already exists', async () => {
@@ -164,7 +165,7 @@ describe('StarterOnboarding', () => {
     const { container } = renderOnboarding()
 
     await waitFor(() => expect(getGameProgressMock).toHaveBeenCalled())
-    await waitFor(() => expect(listSpeciesCatalogMock).toHaveBeenCalled())
     expect(container).toBeEmptyDOMElement()
+    expect(listSpeciesCatalogMock).not.toHaveBeenCalled()
   })
 })

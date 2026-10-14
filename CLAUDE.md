@@ -36,6 +36,7 @@ npx supabase migration new <name>              # new migration under supabase/mi
 npm run db:push                                  # apply pending migrations to the linked remote project
 npm run db:types                                  # regenerate src/shared/types/database.ts from remote schema
 npm run catalog:import                             # fetch species from PokéAPI, prints SQL seed to review/paste into a migration
+npm run perf:measure                               # after `npm run build`: requests/timings per route against a mocked API
 npm run campaign:seed                              # validate src/features/journey/content/ and print its SQL seed for a new migration
 npx supabase db query --linked -f <path>.sql         # run a one-off verification script (see below)
 ```

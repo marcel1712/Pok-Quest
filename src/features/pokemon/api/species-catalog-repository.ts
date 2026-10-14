@@ -16,15 +16,49 @@ export async function listSpeciesCatalog(): Promise<SpeciesCatalogEntry[]> {
   return data
 }
 
-export async function getSpeciesByPokedexNumber(
-  pokedexNumber: number,
-): Promise<SpeciesCatalogEntry | null> {
+type Waiter = {
+  resolve: (species: SpeciesCatalogEntry | null) => void
+  reject: (error: unknown) => void
+}
+
+let waitersByNumber = new Map<number, Waiter[]>()
+let flushScheduled = false
+
+async function flush() {
+  const batch = waitersByNumber
+  waitersByNumber = new Map()
+  flushScheduled = false
+
   const { data, error } = await supabase
     .from('species_catalog')
     .select('*')
-    .eq('pokedex_number', pokedexNumber)
-    .maybeSingle()
+    .in('pokedex_number', [...batch.keys()])
 
-  if (error) throw error
-  return data
+  for (const [pokedexNumber, waiters] of batch) {
+    const species = data?.find((entry) => entry.pokedex_number === pokedexNumber) ?? null
+    for (const waiter of waiters) {
+      if (error) waiter.reject(error)
+      else waiter.resolve(species)
+    }
+  }
+}
+
+/**
+ * One species by number. Lookups asked for in the same tick are coalesced into a single
+ * request (T-034): a screen showing six Pokémon makes one `in (...)` query instead of
+ * six. Callers still get exactly their own species, or `null` if it does not exist.
+ */
+export function getSpeciesByPokedexNumber(
+  pokedexNumber: number,
+): Promise<SpeciesCatalogEntry | null> {
+  return new Promise((resolve, reject) => {
+    const waiters = waitersByNumber.get(pokedexNumber) ?? []
+    waiters.push({ resolve, reject })
+    waitersByNumber.set(pokedexNumber, waiters)
+
+    if (!flushScheduled) {
+      flushScheduled = true
+      setTimeout(() => void flush(), 0)
+    }
+  })
 }

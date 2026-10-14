@@ -1,4 +1,3 @@
-import { motion } from 'motion/react'
 import type { Battle } from '@/features/battles/types'
 import { useBadges } from '../hooks/use-badges'
 import { useJourney } from '../hooks/use-journey'
@@ -24,17 +23,12 @@ export function VictoryEpilogue({ battle }: { battle: Battle }) {
   return (
     <div className="flex max-w-sm flex-col gap-2 rounded-control border border-line bg-surface/50 p-3">
       {earnedBadge && entry.node.badge_name && (
-        // The one celebratory moment worth animating: a rare, earned reward. MotionConfig
-        // in RootLayout drops the movement under reduced-motion settings.
-        <motion.p
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-          className="font-semibold text-warning"
-        >
+        // The one celebratory moment worth animating: a rare, earned reward. The global
+        // reduced-motion rules in styles/index.css cancel it when motion is unwanted.
+        <p className="animate-pop font-semibold text-warning">
           <span aria-hidden="true">🏅 </span>
           Você conquistou a {entry.node.badge_name}!
-        </motion.p>
+        </p>
       )}
       {outro.map((line) => (
         <p key={line} className="text-sm text-ink-soft">

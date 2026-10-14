@@ -35,6 +35,7 @@ npm run dev
 | `npm run db:push`        | aplica migrations locais no projeto Supabase linkado                                    |
 | `npm run db:types`       | regenera `src/shared/types/database.ts` a partir do schema remoto                       |
 | `npm run catalog:import` | importa a Pokédex do Platinum da PokéAPI e imprime o SQL de seed (colar numa migration) |
+| `npm run perf:measure`   | mede requisições e tempos por rota no build de produção, com API simulada               |
 | `npm run campaign:seed`  | valida o conteúdo da campanha e imprime o SQL de seed (colar numa migration)            |
 
 ## Banco de dados (Supabase)

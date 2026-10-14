@@ -3,6 +3,7 @@ import { TaskFilterTabs } from '@/features/tasks/components/TaskFilterTabs'
 import { TaskForm } from '@/features/tasks/components/TaskForm'
 import { TaskItem } from '@/features/tasks/components/TaskItem'
 import { useCreateTask } from '@/features/tasks/hooks/use-task-mutations'
+import { TASK_HISTORY_LIMIT } from '@/features/tasks/limits'
 import { useTasks } from '@/features/tasks/hooks/use-tasks'
 import { scheduleTasks, todayIsoDate } from '@/features/tasks/scheduling'
 import type { Task, TaskStatus } from '@/features/tasks/types'
@@ -79,11 +80,18 @@ export function TasksPage() {
       )}
 
       {tasks && tasks.length > 0 && statusFilter !== 'pending' && (
-        <ul className="flex flex-col gap-2">
-          {tasks.map((task) => (
-            <TaskItem key={task.id} task={task} />
-          ))}
-        </ul>
+        <>
+          <ul className="flex flex-col gap-2">
+            {tasks.map((task) => (
+              <TaskItem key={task.id} task={task} />
+            ))}
+          </ul>
+          {tasks.length >= TASK_HISTORY_LIMIT && (
+            <p className="text-sm text-ink-muted">
+              Mostrando as {TASK_HISTORY_LIMIT} mais recentes.
+            </p>
+          )}
+        </>
       )}
     </section>
   )

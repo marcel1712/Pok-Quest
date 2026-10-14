@@ -217,11 +217,15 @@ beforeEach(() => {
   listSpeciesCatalogMock
     .mockReset()
     .mockResolvedValue([species(390, 'Chimchar'), species(396, 'Starly')])
-  getSpeciesByPokedexNumberMock.mockReset().mockResolvedValue({
-    ...species(396, 'Starly'),
-    sprite_url: 'https://example.com/396.png',
-    animated_sprite_url: 'https://example.com/396.gif',
-  })
+  getSpeciesByPokedexNumberMock.mockReset().mockImplementation(async (pokedexNumber) =>
+    pokedexNumber === 396
+      ? {
+          ...species(396, 'Starly'),
+          sprite_url: 'https://example.com/396.png',
+          animated_sprite_url: 'https://example.com/396.gif',
+        }
+      : species(pokedexNumber, 'Chimchar'),
+  )
   listOwnedPokemonMock.mockReset().mockResolvedValue([
     {
       id: 'p1',

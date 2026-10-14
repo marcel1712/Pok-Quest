@@ -1,12 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { RequireAuth } from '@/features/auth/components/RequireAuth'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { FocusPage } from '@/pages/FocusPage'
-import { JourneyPage } from '@/pages/JourneyPage'
 import { LoginPage } from '@/pages/LoginPage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { TasksPage } from '@/pages/TasksPage'
-import { TeamPage } from '@/pages/TeamPage'
+import { pageLoaders } from './page-loaders'
 import { RootLayout } from './RootLayout'
 
 export const router = createBrowserRouter([
@@ -14,17 +9,23 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <RequireAuth />,
+    // Shown only on a cold load, while the first page's chunk is on its way.
+    hydrateFallbackElement: (
+      <div className="flex min-h-screen items-center justify-center bg-canvas text-ink-muted">
+        Carregando…
+      </div>
+    ),
     children: [
       {
         path: '/',
         element: <RootLayout />,
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: 'tasks', element: <TasksPage /> },
-          { path: 'focus', element: <FocusPage /> },
-          { path: 'team', element: <TeamPage /> },
-          { path: 'journey', element: <JourneyPage /> },
-          { path: 'settings', element: <SettingsPage /> },
+          { index: true, lazy: pageLoaders['/'] },
+          { path: 'tasks', lazy: pageLoaders['/tasks'] },
+          { path: 'focus', lazy: pageLoaders['/focus'] },
+          { path: 'team', lazy: pageLoaders['/team'] },
+          { path: 'journey', lazy: pageLoaders['/journey'] },
+          { path: 'settings', lazy: pageLoaders['/settings'] },
         ],
       },
     ],

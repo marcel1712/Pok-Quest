@@ -1,9 +1,10 @@
-import { MotionConfig } from 'motion/react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { signOut } from '@/features/auth/api/auth'
+import { pageLoaders, type PagePath } from './page-loaders'
+import { ReducedMotionPreferenceContext } from '@/shared/hooks/use-reduced-motion'
 import { useFocusPreferences } from '@/features/settings/hooks/use-focus-preferences'
 
-const navItems = [
+const navItems: { to: PagePath; label: string }[] = [
   { to: '/', label: 'Dashboard' },
   { to: '/tasks', label: 'Tarefas' },
   { to: '/focus', label: 'Foco' },
@@ -14,13 +15,13 @@ const navItems = [
 
 export function RootLayout() {
   // The single place the in-app "reduce motion" preference is applied: the data
-  // attribute switches off CSS transitions/animations (see styles/index.css) and
-  // MotionConfig does the same for Motion components. With the preference off, both
-  // still follow the operating system's prefers-reduced-motion setting.
+  // attribute switches off CSS transitions/animations (see styles/index.css) and the
+  // context tells components about motion CSS cannot stop (animated GIFs). With the
+  // preference off, both still follow the operating system's setting.
   const { preferences } = useFocusPreferences()
 
   return (
-    <MotionConfig reducedMotion={preferences.reduceMotion ? 'always' : 'user'}>
+    <ReducedMotionPreferenceContext value={preferences.reduceMotion}>
       <div
         data-reduce-motion={preferences.reduceMotion ? 'true' : undefined}
         className="min-h-screen bg-canvas text-ink"
@@ -42,6 +43,10 @@ export function RootLayout() {
                   }`
                 }
                 end={item.to === '/'}
+                // Restricted prefetch: only the code for the page being pointed at, never
+                // its data. A repeated import() is a no-op once the chunk is loaded.
+                onPointerEnter={() => void pageLoaders[item.to]()}
+                onFocus={() => void pageLoaders[item.to]()}
               >
                 {item.label}
               </NavLink>
@@ -59,6 +64,6 @@ export function RootLayout() {
           <Outlet />
         </main>
       </div>
-    </MotionConfig>
+    </ReducedMotionPreferenceContext>
   )
 }
