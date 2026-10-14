@@ -359,3 +359,14 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Texto original:** os acontecimentos seguem o Platinum; nenhuma fala é citação do jogo.
 **Camadas:** `battles` não importa `journey`. O card de resultado ganhou um espaço (`children` / `renderEpilogue`) que a página de Foco preenche com `VictoryEpilogue`; líder e recompensa chegam ao `EncounterCard` como texto simples.
 **Limitações:** as cenas só aparecem pelo Foco (Tarefas ainda não têm encontro); o desfecho de uma etapa com mais de uma vitória só aparece na vitória que a conclui; líderes ainda não têm time de Pokémon definido; as insígnias aparecem só na Jornada (o Dashboard é o T-032).
+
+## 2026-10-14 — Dashboard (T-032): seções independentes que leem o mesmo cache das páginas
+
+**Decisão:** o Dashboard é composto por quatro seções em `src/pages/dashboard/` (Foco, Tarefas, Equipe, Jornada), cada uma usando os mesmos hooks — e portanto as mesmas chaves de cache — das páginas completas. Nenhuma consulta nova foi criada para o Dashboard: Tarefas usa `useTasks({ status: 'pending' })`, a mesma entrada da aba padrão da página Tarefas; Equipe usa `useOwnedPokemon` e o catálogo inteiro (um request, em cache por 24h) em vez de um lookup por Pokémon.
+**Consequência:** ir do Dashboard para uma página (ou voltar) dentro do `staleTime` não dispara request, e concluir uma tarefa no Dashboard atualiza lista e contagens na hora pelo patch otimista que as mutations de tarefa já faziam — a invalidação continua restrita ao domínio `tasks`.
+**Cada seção carrega e falha sozinha:** `WidgetCard` mostra skeleton no primeiro carregamento e, em erro, a mensagem amigável com "Tentar de novo"; as outras seções seguem funcionando.
+**Tarefas prioritárias (`pickPriorityTasks`):** as de hoje, depois as atrasadas (mais antigas primeiro), depois as sem data; mais difíceis primeiro dentro de cada grupo; no máximo 5, com "+ N em Tarefas". Tarefas futuras não entram.
+**Ordem no celular:** Foco, Tarefas, Equipe, Jornada — iniciar foco fica acima da dobra. Em telas largas a lista de tarefas ocupa a coluna esquerda.
+**Offline:** aviso baseado em `navigator.onLine`. É só um indício (estar "online" não garante que a API responde) e o texto não promete que alterações feitas offline serão salvas.
+**Layout testado por E2E com API simulada:** `tests/e2e/dashboard-layout.spec.ts` abre o Dashboard em 360, 768 e 1920 px com 60 tarefas de título longo e um time de 6, e verifica que não há rolagem horizontal e que as ações cabem na tela. Usa uma sessão falsa e intercepta todo request ao host do Supabase — nunca toca o projeto real — então roda também no CI. Conferi as capturas de 360 e 1920 px manualmente.
+**Limitações:** não há prefetch nem medição de requests (T-034); o design visual segue o padrão provisório (T-033); as tarefas do Dashboard continuam sem encontro vinculado.
