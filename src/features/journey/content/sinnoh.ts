@@ -1,4 +1,5 @@
 import type { CampaignNodeContent, CampaignRegionContent } from './schema.ts'
+import { SINNOH_SCENES } from './sinnoh-scenes.ts'
 import { SINNOH_WILD } from './sinnoh-wild.ts'
 
 // The whole Pokémon Platinum storyline, in the games' order: eight badges, the Team
@@ -12,6 +13,17 @@ type Difficulty = 1 | 2 | 3 | 4 | 5
 type Step = Omit<CampaignNodeContent, 'requires'>
 
 const id = (slug: string) => `sinnoh.${slug}`
+
+const BADGES: Record<string, string> = {
+  'oreburgh-gym': 'Insígnia do Carvão',
+  'eterna-gym': 'Insígnia da Floresta',
+  'hearthome-gym': 'Insígnia da Relíquia',
+  'veilstone-gym': 'Insígnia do Seixo',
+  'pastoria-gym': 'Insígnia do Brejo',
+  'canalave-gym': 'Insígnia da Mina',
+  'snowpoint-gym': 'Insígnia do Gelo',
+  'sunyshore-gym': 'Insígnia do Farol',
+}
 
 function route(
   slug: string,
@@ -97,6 +109,8 @@ function gym(
     encounter: { kind: 'gymLeader', difficulty },
     requiredVictories: 1,
     repeatable: false,
+    // A gym without a badge is caught by validateCampaignRegion.
+    ...(BADGES[slug] ? { badgeName: BADGES[slug] } : {}),
   }
 }
 
@@ -104,14 +118,15 @@ function gym(
 function chain(steps: Step[]): CampaignNodeContent[] {
   return steps.map((step, index) => {
     const previous = steps[index - 1]
-    return { ...step, requires: previous ? [previous.id] : [] }
+    const scene = SINNOH_SCENES[step.id.replace('sinnoh.', '')]
+    return { ...step, ...(scene ? { scene } : {}), requires: previous ? [previous.id] : [] }
   })
 }
 
 export const sinnoh: CampaignRegionContent = {
   id: 'sinnoh',
   name: 'Sinnoh',
-  contentVersion: 3,
+  contentVersion: 4,
   nodes: chain([
     // --- Capítulo 1: primeiros passos e a Insígnia do Carvão ---
     story(

@@ -1,5 +1,5 @@
 import { supabase } from '@/shared/lib/supabase-client'
-import type { CampaignContent, CampaignEncounter, CampaignNodeProgress } from '../types'
+import type { Badge, CampaignContent, CampaignEncounter, CampaignNodeProgress } from '../types'
 
 /** Reference content, seeded only by migrations generated from `content/`. */
 export async function getCampaignContent(): Promise<CampaignContent> {
@@ -31,4 +31,11 @@ export async function getCurrentEncounter(): Promise<CampaignEncounter | null> {
   if (error) throw error
   // A SQL function returning a null composite arrives as a row of nulls.
   return data?.id ? data : null
+}
+
+/** Read-only for the client: a badge is credited solely by the battle-resolution trigger. */
+export async function listBadges(): Promise<Badge[]> {
+  const { data, error } = await supabase.from('badges').select('*')
+  if (error) throw error
+  return data
 }

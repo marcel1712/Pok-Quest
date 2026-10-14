@@ -22,7 +22,7 @@ export function JourneyNodeList({
   objectiveNodeId: string | null
 }) {
   return (
-    <ol className="flex flex-col gap-3">
+    <ol aria-label="Etapas da jornada" className="flex flex-col gap-3">
       {journey.map(({ node, status, victories }) => {
         const encounter = ENCOUNTER_LABELS[node.encounter_kind as EncounterKind]
         const isObjective = node.id === objectiveNodeId
@@ -54,6 +54,24 @@ export function JourneyNodeList({
                   }`}
                 {status === 'completed' && node.repeatable && ' · pode ser explorada de novo'}
               </p>
+              {node.badge_name && (
+                <p className="text-xs text-amber-300">
+                  {status === 'completed' ? 'Conquistada: ' : 'Recompensa: '}
+                  {node.badge_name}
+                </p>
+              )}
+              {status !== 'locked' && node.scene_intro.length > 0 && (
+                <details className="text-sm text-slate-300">
+                  <summary className="cursor-pointer text-xs text-emerald-400">Rever cena</summary>
+                  <div className="mt-2 flex flex-col gap-1">
+                    {[...node.scene_intro, ...(status === 'completed' ? node.scene_outro : [])].map(
+                      (line) => (
+                        <p key={line}>{line}</p>
+                      ),
+                    )}
+                  </div>
+                </details>
+              )}
             </div>
           </li>
         )

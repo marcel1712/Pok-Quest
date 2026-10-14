@@ -40,6 +40,12 @@ export function validateCampaignRegion(input: unknown): string[] {
     if (node.repeatable && node.kind !== 'route') {
       issues.push(`${node.id}: only route nodes can be repeatable`)
     }
+    if (node.kind === 'gym' && !node.badgeName) {
+      issues.push(node.id + ': a gym node must award a badge')
+    }
+    if (node.kind !== 'gym' && node.badgeName) {
+      issues.push(node.id + ': only gym nodes can award a badge')
+    }
     const wildEncounters = node.wildEncounters ?? []
     if (node.encounter.kind === 'wild' && wildEncounters.length === 0) {
       issues.push(node.id + ': a wild node needs at least one wild encounter entry')
@@ -78,6 +84,13 @@ export function validateCampaignRegion(input: unknown): string[] {
       }
     }
   })
+
+  const badgeNames = region.nodes.flatMap((node) => (node.badgeName ? [node.badgeName] : []))
+  for (const name of new Set(badgeNames)) {
+    if (badgeNames.filter((other) => other === name).length > 1) {
+      issues.push('badge "' + name + '" is awarded by more than one node')
+    }
+  }
 
   if (!region.nodes.some((node) => node.requires.length === 0)) {
     issues.push('no starting node: at least one node must have no prerequisites')

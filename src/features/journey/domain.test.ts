@@ -15,6 +15,9 @@ function node(id: string, sortOrder: number, overrides: Partial<CampaignNode> = 
     encounter_difficulty: 1,
     required_victories: 3,
     repeatable: false,
+    badge_name: null,
+    scene_intro: [],
+    scene_outro: [],
     ...overrides,
   }
 }

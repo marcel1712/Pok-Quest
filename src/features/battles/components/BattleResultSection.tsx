@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { useBattleForFocusSession } from '../hooks/use-battle'
 import { BattleResultCard } from './BattleResultCard'
 import { BattleSequence } from './BattleSequence'
-import type { EncounterKind } from '../types'
+import type { Battle, EncounterKind } from '../types'
 
 /**
  * Looks up whatever battle is attached to the just-confirmed session and shows its
@@ -15,11 +16,14 @@ export function BattleResultSection({
   reduceMotion,
   onNoBattle,
   onDismiss,
+  renderEpilogue,
 }: {
   focusSessionId: string
   reduceMotion: boolean
   onNoBattle: () => void
   onDismiss: () => void
+  /** Story content for the resolved battle, supplied by the caller (campaign layer). */
+  renderEpilogue?: (battle: Battle) => ReactNode
 }) {
   const { data: battle, isLoading } = useBattleForFocusSession(focusSessionId)
 
@@ -37,7 +41,9 @@ export function BattleResultSection({
       }}
       reduceMotion={reduceMotion}
     >
-      <BattleResultCard battle={battle} onDismiss={onDismiss} />
+      <BattleResultCard battle={battle} onDismiss={onDismiss}>
+        {renderEpilogue?.(battle)}
+      </BattleResultCard>
     </BattleSequence>
   )
 }

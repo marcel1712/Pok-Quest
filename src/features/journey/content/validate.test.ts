@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CampaignNodeContent, CampaignRegionContent } from './schema'
 import { sinnoh } from './sinnoh'
+import { SINNOH_SCENES } from './sinnoh-scenes'
 import { validateCampaignRegion } from './validate'
 
 const starly = { species: 396, minLevel: 2, maxLevel: 3, weight: 10 }
@@ -176,6 +177,36 @@ describe('validateCampaignRegion', () => {
     }
   })
 
+  it('requires a badge on gyms, only on gyms, and each badge only once', () => {
+    const gymNode = (id: string, badgeName?: string) =>
+      node({
+        id,
+        kind: 'gym',
+        encounter: { kind: 'gymLeader', difficulty: 3 },
+        wildEncounters: undefined,
+        ...(badgeName ? { badgeName } : {}),
+      })
+
+    expect(validateCampaignRegion(region([gymNode('test.a')]))).toContain(
+      'test.a: a gym node must award a badge',
+    )
+    expect(validateCampaignRegion(region([node({ id: 'test.a', badgeName: 'X' })]))).toContain(
+      'test.a: only gym nodes can award a badge',
+    )
+    expect(
+      validateCampaignRegion(region([gymNode('test.a', 'Carvão'), gymNode('test.b', 'Carvão')])),
+    ).toContain('badge "Carvão" is awarded by more than one node')
+    expect(validateCampaignRegion(region([gymNode('test.a', 'Carvão')]))).toEqual([])
+  })
+
+  it('every scene in the shipped content belongs to an existing node', () => {
+    const withScene = sinnoh.nodes.filter((entry) => entry.scene)
+    expect(withScene).toHaveLength(Object.keys(SINNOH_SCENES).length)
+    expect(sinnoh.nodes.filter((entry) => entry.kind === 'gym').every((entry) => entry.scene)).toBe(
+      true,
+    )
+  })
+
   it('reports repeatable nodes that are not routes', () => {
     expect(
       validateCampaignRegion(
@@ -185,6 +216,7 @@ describe('validateCampaignRegion', () => {
             kind: 'gym',
             encounter: { kind: 'gymLeader', difficulty: 3 },
             repeatable: true,
+            badgeName: 'Teste',
           }),
         ]),
       ),

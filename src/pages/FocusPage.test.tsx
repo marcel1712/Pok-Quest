@@ -13,6 +13,7 @@ import {
 import {
   getCampaignContent,
   getCurrentEncounter,
+  listBadges,
   listCampaignProgress,
 } from '@/features/journey/api/campaign-repository'
 import { getSpeciesByPokedexNumber } from '@/features/pokemon/api/species-catalog-repository'
@@ -27,6 +28,7 @@ vi.mock('@/features/journey/api/campaign-repository', () => ({
   getCampaignContent: vi.fn(),
   listCampaignProgress: vi.fn(),
   getCurrentEncounter: vi.fn(),
+  listBadges: vi.fn(),
 }))
 
 vi.mock('@/features/pokemon/api/species-catalog-repository', () => ({
@@ -68,6 +70,7 @@ const listRewardEventsMock = vi.mocked(listRewardEvents)
 const getCampaignContentMock = vi.mocked(getCampaignContent)
 const listCampaignProgressMock = vi.mocked(listCampaignProgress)
 const getCurrentEncounterMock = vi.mocked(getCurrentEncounter)
+const listBadgesMock = vi.mocked(listBadges)
 const getSpeciesByPokedexNumberMock = vi.mocked(getSpeciesByPokedexNumber)
 
 const wildEncounter = {
@@ -111,6 +114,9 @@ const campaignContent = {
       encounter_difficulty: 1,
       required_victories: 3,
       repeatable: true,
+      badge_name: null,
+      scene_intro: [],
+      scene_outro: [],
     },
   ],
   prerequisites: [],
@@ -192,6 +198,8 @@ beforeEach(() => {
   getCampaignContentMock.mockReset().mockResolvedValue(campaignContent)
   listCampaignProgressMock.mockReset().mockResolvedValue([])
   getCurrentEncounterMock.mockReset().mockResolvedValue(wildEncounter)
+  listBadgesMock.mockReset().mockResolvedValue([])
+  localStorage.clear()
   getSpeciesByPokedexNumberMock.mockReset().mockResolvedValue(starly)
   getActiveSessionMock.mockReset()
   startSessionMock.mockReset()
@@ -261,6 +269,54 @@ describe('FocusPage — encounter before starting', () => {
     expect(await screen.findByText('Rival')).toBeInTheDocument()
     expect(screen.queryByText(/selvagem/)).not.toBeInTheDocument()
     expect(getSpeciesByPokedexNumberMock).not.toHaveBeenCalled()
+  })
+
+  it('plays the gym intro scene first, then shows the leader and the badge at stake', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    getCampaignContentMock.mockResolvedValue({
+      nodes: [
+        {
+          ...campaignContent.nodes[0]!,
+          id: 'sinnoh.oreburgh-gym',
+          kind: 'gym',
+          title: 'Ginásio de Oreburgh',
+          npc_name: 'Roark',
+          encounter_kind: 'gymLeader',
+          encounter_difficulty: 3,
+          required_victories: 1,
+          repeatable: false,
+          badge_name: 'Insígnia do Carvão',
+          scene_intro: ['Roark tira o capacete.', 'Roark: "Mostre do que é feito!"'],
+        },
+      ],
+      prerequisites: [],
+    })
+    getCurrentEncounterMock.mockResolvedValue({
+      ...wildEncounter,
+      campaign_node_id: 'sinnoh.oreburgh-gym',
+      encounter_kind: 'gymLeader',
+      encounter_difficulty: 3,
+      wild_species_pokedex_number: null,
+      wild_level: null,
+    })
+    const { unmount } = renderPage()
+
+    expect(await screen.findByText('Roark tira o capacete.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aceitar encontro' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Pular cena' }))
+
+    expect(screen.getByText('Líder de Ginásio: Roark')).toBeInTheDocument()
+    expect(screen.getByText('Recompensa: Insígnia do Carvão + XP de bônus')).toBeInTheDocument()
+    expect(
+      screen.getByText('sessão de foco de pelo menos 3 min', { exact: false }),
+    ).toBeInTheDocument()
+
+    // A scene already seen on this device does not play again after a reload.
+    unmount()
+    renderPage()
+    expect(await screen.findByText('Líder de Ginásio: Roark')).toBeInTheDocument()
+    expect(screen.queryByText('Roark tira o capacete.')).not.toBeInTheDocument()
   })
 
   it('falls back to the plain start form when the encounter cannot be loaded', async () => {

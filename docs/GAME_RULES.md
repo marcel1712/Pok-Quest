@@ -168,6 +168,7 @@ A campanha é uma lista ordenada de **nós** (cidade/história, rota, rival, gin
 
 - **Encontro selvagem:** cada rota tem uma tabela de espécies com faixa de nível e peso. A chance de uma espécie é o peso dela dividido pela soma dos pesos da tabela; o nível é sorteado uniformemente na faixa. O encontro é sorteado uma vez, guardado, e só é trocado depois de uma vitória. Lendários nunca entram em tabela.
 - **Captura:** o Pokémon capturado chega no nível em que foi encontrado.
+- **Insígnia:** cada ginásio dá uma insígnia, uma única vez, na vitória que conclui a etapa. Ginásio vencido não aceita revanche. A etapa seguinte só abre depois dele.
 
 Tudo isso é aplicado no banco (`enforce_campaign_node_on_battle` e `record_campaign_progress_on_battle_resolved`). As tabelas ficam em `src/features/journey/content/sinnoh-wild.ts`. O conteúdo atual está em `src/features/journey/content/sinnoh.ts`.
 

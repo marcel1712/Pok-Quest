@@ -26,6 +26,14 @@ export const wildEncounterSchema = z
   })
   .refine((entry) => entry.minLevel <= entry.maxLevel, 'minLevel must not exceed maxLevel')
 
+const sceneLinesSchema = z.array(z.string().min(1).max(200)).min(1).max(6)
+
+/** Short narrative shown before (`intro`) and after (`outro`) a node. Skippable. */
+export const sceneSchema = z.object({
+  intro: sceneLinesSchema,
+  outro: sceneLinesSchema.optional(),
+})
+
 export const campaignNodeSchema = z.object({
   id: nodeIdSchema,
   kind: campaignNodeKindSchema,
@@ -44,6 +52,9 @@ export const campaignNodeSchema = z.object({
   requires: z.array(nodeIdSchema),
   /** Which species a wild encounter on this node can be. Required for wild nodes. */
   wildEncounters: z.array(wildEncounterSchema).optional(),
+  /** The badge awarded for completing the node. Required for gyms, and only there. */
+  badgeName: z.string().min(1).optional(),
+  scene: sceneSchema.optional(),
 })
 
 export const campaignRegionSchema = z.object({
@@ -55,6 +66,7 @@ export const campaignRegionSchema = z.object({
   nodes: z.array(campaignNodeSchema).min(1),
 })
 
+export type SceneContent = z.infer<typeof sceneSchema>
 export type WildEncounterContent = z.infer<typeof wildEncounterSchema>
 export type CampaignNodeKind = z.infer<typeof campaignNodeKindSchema>
 export type CampaignNodeContent = z.infer<typeof campaignNodeSchema>

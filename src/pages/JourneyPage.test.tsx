@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getCampaignContent,
+  listBadges,
   listCampaignProgress,
 } from '@/features/journey/api/campaign-repository'
 import type { CampaignContent, CampaignNode } from '@/features/journey/types'
@@ -22,10 +23,12 @@ vi.mock('@/features/pokemon/api/species-catalog-repository', () => ({
 vi.mock('@/features/journey/api/campaign-repository', () => ({
   getCampaignContent: vi.fn(),
   listCampaignProgress: vi.fn(),
+  listBadges: vi.fn(),
 }))
 
 const getCampaignContentMock = vi.mocked(getCampaignContent)
 const listCampaignProgressMock = vi.mocked(listCampaignProgress)
+const listBadgesMock = vi.mocked(listBadges)
 
 function node(overrides: Partial<CampaignNode> & { id: string; sort_order: number }): CampaignNode {
   return {
@@ -38,6 +41,9 @@ function node(overrides: Partial<CampaignNode> & { id: string; sort_order: numbe
     encounter_difficulty: 1,
     required_victories: 3,
     repeatable: true,
+    badge_name: null,
+    scene_intro: [],
+    scene_outro: [],
     ...overrides,
   }
 }
@@ -58,6 +64,7 @@ const content: CampaignContent = {
       id: 'sinnoh.gym',
       sort_order: 3,
       kind: 'gym',
+      badge_name: 'Insígnia do Carvão',
       title: 'Ginásio de Oreburgh',
       summary: 'Segredo do ginásio.',
       npc_name: 'Roark',
@@ -73,6 +80,10 @@ const content: CampaignContent = {
   ],
 }
 
+function steps() {
+  return within(screen.getByRole('list', { name: 'Etapas da jornada' })).getAllByRole('listitem')
+}
+
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -85,6 +96,7 @@ function renderPage() {
 beforeEach(() => {
   getCampaignContentMock.mockReset().mockResolvedValue(content)
   listCampaignProgressMock.mockReset().mockResolvedValue([])
+  listBadgesMock.mockReset().mockResolvedValue([])
 })
 
 describe('JourneyPage', () => {
@@ -101,7 +113,7 @@ describe('JourneyPage', () => {
     renderPage()
 
     expect(await screen.findByText('1 de 3 etapas concluídas')).toBeInTheDocument()
-    const [town, route, gym] = screen.getAllByRole('listitem')
+    const [town, route, gym] = steps()
 
     expect(within(town!).getByText('Concluído')).toBeInTheDocument()
     expect(within(town!).getByText(/1\/1 vitória/)).toBeInTheDocument()
@@ -119,7 +131,7 @@ describe('JourneyPage', () => {
     renderPage()
 
     expect(await screen.findByText('0 de 3 etapas concluídas')).toBeInTheDocument()
-    expect(screen.getAllByRole('listitem')[0]).toHaveAttribute('aria-current', 'step')
+    expect(steps()[0]).toHaveAttribute('aria-current', 'step')
   })
 
   it('shows the story completion percentage', async () => {
@@ -167,14 +179,14 @@ describe('JourneyPage', () => {
     renderPage()
 
     expect(await screen.findByText('Página 2 de 3')).toBeInTheDocument()
-    expect(screen.getAllByRole('listitem')).toHaveLength(10)
+    expect(steps()).toHaveLength(10)
     expect(screen.getByText('Etapa 13').closest('li')).toHaveAttribute('aria-current', 'step')
     expect(screen.queryByText('Etapa 1')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ir para onde parei' })).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Próxima' }))
     expect(screen.getByText('Página 3 de 3')).toBeInTheDocument()
-    expect(screen.getAllByRole('listitem')).toHaveLength(5)
+    expect(steps()).toHaveLength(5)
     expect(screen.getByRole('button', { name: 'Próxima' })).toBeDisabled()
 
     await userEvent.click(screen.getByRole('button', { name: 'Ir para onde parei' }))
@@ -190,6 +202,58 @@ describe('JourneyPage', () => {
 
     await screen.findByText('0 de 3 etapas concluídas')
     expect(screen.queryByRole('navigation', { name: 'Páginas da jornada' })).not.toBeInTheDocument()
+  })
+
+  it('lists the badges, marking the earned ones', async () => {
+    listBadgesMock.mockResolvedValue([
+      {
+        owner_id: 'owner-1',
+        node_id: 'sinnoh.gym',
+        battle_id: 'battle-1',
+        earned_at: '2026-10-13T00:00:00Z',
+      },
+    ])
+    renderPage()
+
+    expect(await screen.findByRole('heading', { name: 'Insígnias · 1/1' })).toBeInTheDocument()
+    expect(screen.getByText('— conquistada', { exact: false })).toBeInTheDocument()
+  })
+
+  it('shows unearned badges as not yet conquered', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('heading', { name: 'Insígnias · 0/1' })).toBeInTheDocument()
+    expect(screen.getByText('— ainda não conquistada', { exact: false })).toBeInTheDocument()
+  })
+
+  it('lets an unlocked scene be read again, but not a locked one', async () => {
+    getCampaignContentMock.mockResolvedValue({
+      ...content,
+      nodes: content.nodes.map((entry) => ({
+        ...entry,
+        scene_intro: ['Cena de ' + entry.title],
+        scene_outro: ['Desfecho de ' + entry.title],
+      })),
+    })
+    listCampaignProgressMock.mockResolvedValue([
+      {
+        owner_id: 'owner-1',
+        node_id: 'sinnoh.town',
+        victories: 1,
+        completed_at: '2026-10-13T00:00:00Z',
+      },
+    ])
+    renderPage()
+
+    await screen.findByText('1 de 3 etapas concluídas')
+    const [town, route, gym] = steps()
+
+    // Completed: intro and outro. In progress: intro only. Locked: nothing.
+    expect(within(town!).getByText('Rever cena')).toBeInTheDocument()
+    expect(within(town!).getByText('Desfecho de Twinleaf Town')).toBeInTheDocument()
+    expect(within(route!).getByText('Cena de Rota 201')).toBeInTheDocument()
+    expect(within(route!).queryByText('Desfecho de Rota 201')).not.toBeInTheDocument()
+    expect(within(gym!).queryByText('Rever cena')).not.toBeInTheDocument()
   })
 
   it('shows a friendly error when the campaign cannot be loaded', async () => {

@@ -15,8 +15,11 @@ import { useActiveFocusSession } from '@/features/focus/hooks/use-active-focus-s
 import { useCompletionChime } from '@/features/focus/hooks/use-completion-chime'
 import { useStartFocusSession } from '@/features/focus/hooks/use-focus-session-mutations'
 import { useSessionClock } from '@/features/focus/hooks/use-session-clock'
+import { NarrativeScene } from '@/features/journey/components/NarrativeScene'
+import { VictoryEpilogue } from '@/features/journey/components/VictoryEpilogue'
 import { useCurrentEncounter } from '@/features/journey/hooks/use-current-encounter'
 import { useJourney } from '@/features/journey/hooks/use-journey'
+import { useSeenScenes } from '@/features/journey/hooks/use-seen-scenes'
 import { useSpeciesByPokedexNumber } from '@/features/pokemon/hooks/use-species-catalog'
 import {
   useFocusPreferences,
@@ -58,8 +61,10 @@ export function FocusPage() {
         difficulty: currentEncounter.encounter_difficulty,
       }
     : null
-  const locationName = journey.find((entry) => entry.node.id === currentEncounter?.campaign_node_id)
-    ?.node.title
+  const encounterNode = journey.find(
+    (entry) => entry.node.id === currentEncounter?.campaign_node_id,
+  )?.node
+  const { hasSeen, markSeen } = useSeenScenes()
   const [encounterSkipped, setEncounterSkipped] = useState(false)
   const startSession = useStartFocusSession()
   const createBattle = useCreateBattle()
@@ -100,11 +105,17 @@ export function FocusPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.progress() })
     // A victory consumes the encounter; the next one is generated on this refetch.
     queryClient.invalidateQueries({ queryKey: queryKeys.campaign.encounter() })
+    queryClient.invalidateQueries({ queryKey: queryKeys.campaign.badges() })
     setRest({ phase: 'battleResult', focusSessionId: activeSession.id })
   }
 
   const isIdleLoading = isLoading || (!activeSession && isEncounterLoading)
   const isIdle = !isIdleLoading && !activeSession && rest.phase === 'none'
+  const isEncounterOffered = isIdle && encounter && currentEncounter && !encounterSkipped
+  const introScene =
+    encounterNode && encounterNode.scene_intro.length > 0 && !hasSeen(encounterNode.id)
+      ? encounterNode
+      : null
 
   return (
     <section className="flex flex-col gap-6">
@@ -130,10 +141,23 @@ export function FocusPage() {
         </p>
       )}
 
-      {isIdle && encounter && currentEncounter && !encounterSkipped && (
+      {isEncounterOffered && introScene && (
+        <NarrativeScene
+          key={introScene.id}
+          title={introScene.title}
+          lines={introScene.scene_intro}
+          onDone={() => markSeen(introScene.id)}
+        />
+      )}
+
+      {isEncounterOffered && !introScene && (
         <EncounterCard
           encounter={encounter}
-          locationName={locationName}
+          locationName={encounterNode?.title}
+          opponentName={encounterNode?.npc_name ?? undefined}
+          rewardText={
+            encounterNode?.badge_name ? `${encounterNode.badge_name} + XP de bônus` : undefined
+          }
           wild={
             wildSpecies && currentEncounter.wild_level
               ? { species: wildSpecies, level: currentEncounter.wild_level }
@@ -158,6 +182,7 @@ export function FocusPage() {
           reduceMotion={preferences.reduceMotion}
           onNoBattle={() => setRest({ phase: 'prompt' })}
           onDismiss={() => setRest({ phase: 'prompt' })}
+          renderEpilogue={(battle) => <VictoryEpilogue battle={battle} />}
         />
       )}
 

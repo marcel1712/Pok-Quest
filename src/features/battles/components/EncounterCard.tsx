@@ -8,6 +8,8 @@ export function EncounterCard({
   encounter,
   locationName,
   wild,
+  opponentName,
+  rewardText,
   party,
   commitmentType,
   onAccept,
@@ -18,6 +20,10 @@ export function EncounterCard({
   locationName?: string
   /** The wild Pokémon already rolled (server-side) for this encounter, if any. */
   wild?: { species: SpeciesCatalogEntry; level: number }
+  /** Who is being challenged (gym leader, rival...), shown before committing. */
+  opponentName?: string
+  /** What winning gives beyond XP, e.g. a badge — also shown before committing. */
+  rewardText?: string
   party: PartySnapshot
   /** Only the commitment of this type is offered — the caller already knows which
    * activity (task or focus session) this card is being shown for. */
@@ -41,7 +47,11 @@ export function EncounterCard({
         <div>
           {locationName && <p className="text-xs text-slate-400">{locationName}</p>}
           <p className="font-semibold text-slate-100">
-            {wild ? `${wild.species.name} selvagem · Nv. ${wild.level}` : label}
+            {wild
+              ? `${wild.species.name} selvagem · Nv. ${wild.level}`
+              : opponentName
+                ? `${label}: ${opponentName}`
+                : label}
           </p>
           <p className="text-sm text-slate-400">
             Dificuldade {encounter.difficulty}/5 · {'●'.repeat(encounter.difficulty)}
@@ -64,6 +74,8 @@ export function EncounterCard({
           . Cumprindo, a vitória é garantida.
         </p>
       )}
+
+      {rewardText && <p className="text-sm text-amber-300">Recompensa: {rewardText}</p>}
 
       <div className="flex gap-3">
         {commitment && (

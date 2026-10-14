@@ -18,6 +18,12 @@ function text(value: string | undefined): string {
   return value === undefined ? 'null' : `'${value.replaceAll("'", "''")}'`
 }
 
+function textArray(values: string[] | undefined): string {
+  return values && values.length > 0
+    ? `array[${values.map((value) => text(value)).join(', ')}]::text[]`
+    : "'{}'::text[]"
+}
+
 function regionSeed(region: CampaignRegionContent, sortOrder: number): string {
   const nodeRows = region.nodes.map(
     (node, index) =>
@@ -33,6 +39,9 @@ function regionSeed(region: CampaignRegionContent, sortOrder: number): string {
         node.encounter.difficulty,
         node.requiredVictories,
         node.repeatable,
+        text(node.badgeName),
+        textArray(node.scene?.intro),
+        textArray(node.scene?.outro),
       ].join(', ')})`,
   )
   const prerequisiteRows = region.nodes.flatMap((node) =>
@@ -54,7 +63,7 @@ on conflict (id) do update set
   sort_order = excluded.sort_order,
   content_version = excluded.content_version;
 
-insert into public.campaign_nodes (id, region_id, sort_order, kind, title, summary, npc_name, encounter_kind, encounter_difficulty, required_victories, repeatable) values
+insert into public.campaign_nodes (id, region_id, sort_order, kind, title, summary, npc_name, encounter_kind, encounter_difficulty, required_victories, repeatable, badge_name, scene_intro, scene_outro) values
 ${nodeRows.join(',\n')}
 on conflict (id) do update set
   region_id = excluded.region_id,
@@ -66,7 +75,10 @@ on conflict (id) do update set
   encounter_kind = excluded.encounter_kind,
   encounter_difficulty = excluded.encounter_difficulty,
   required_victories = excluded.required_victories,
-  repeatable = excluded.repeatable;
+  repeatable = excluded.repeatable,
+  badge_name = excluded.badge_name,
+  scene_intro = excluded.scene_intro,
+  scene_outro = excluded.scene_outro;
 
 delete from public.campaign_node_prerequisites
   where node_id in (select id from public.campaign_nodes where region_id = ${text(region.id)});

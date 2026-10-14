@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { BadgeCase } from '@/features/journey/components/BadgeCase'
 import { JourneyNodeList } from '@/features/journey/components/JourneyNodeList'
 import { StarterOnboarding } from '@/features/journey/components/StarterOnboarding'
+import { useBadges } from '@/features/journey/hooks/use-badges'
 import { useJourney } from '@/features/journey/hooks/use-journey'
 import { toFriendlyErrorMessage } from '@/shared/lib/supabase-error'
 
@@ -8,6 +10,7 @@ const STEPS_PER_PAGE = 10
 
 export function JourneyPage() {
   const { journey, objective, isLoading, isError, error } = useJourney()
+  const { data: badges } = useBadges()
   // null = follow the player: show the page where the next encounter is.
   const [selectedPage, setSelectedPage] = useState<number | null>(null)
 
@@ -67,6 +70,8 @@ export function JourneyPage() {
               <div className="h-full bg-emerald-500" style={{ width: `${completionPercent}%` }} />
             </div>
           </div>
+
+          <BadgeCase journey={journey} badges={badges ?? []} />
 
           <JourneyNodeList journey={pageEntries} objectiveNodeId={objective?.node.id ?? null} />
 

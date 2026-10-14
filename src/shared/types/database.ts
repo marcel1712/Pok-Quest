@@ -33,6 +33,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      badges: {
+        Row: {
+          battle_id: string
+          earned_at: string
+          node_id: string
+          owner_id: string
+        }
+        Insert: {
+          battle_id: string
+          earned_at?: string
+          node_id: string
+          owner_id: string
+        }
+        Update: {
+          battle_id?: string
+          earned_at?: string
+          node_id?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'badges_battle_id_fkey'
+            columns: ['battle_id']
+            isOneToOne: false
+            referencedRelation: 'battles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'badges_node_id_fkey'
+            columns: ['node_id']
+            isOneToOne: false
+            referencedRelation: 'campaign_nodes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       battles: {
         Row: {
           campaign_node_id: string | null
@@ -232,6 +268,7 @@ export type Database = {
       }
       campaign_nodes: {
         Row: {
+          badge_name: string | null
           encounter_difficulty: number
           encounter_kind: string
           id: string
@@ -240,11 +277,14 @@ export type Database = {
           region_id: string
           repeatable: boolean
           required_victories: number
+          scene_intro: string[]
+          scene_outro: string[]
           sort_order: number
           summary: string
           title: string
         }
         Insert: {
+          badge_name?: string | null
           encounter_difficulty: number
           encounter_kind: string
           id: string
@@ -253,11 +293,14 @@ export type Database = {
           region_id: string
           repeatable?: boolean
           required_victories: number
+          scene_intro?: string[]
+          scene_outro?: string[]
           sort_order: number
           summary: string
           title: string
         }
         Update: {
+          badge_name?: string | null
           encounter_difficulty?: number
           encounter_kind?: string
           id?: string
@@ -266,6 +309,8 @@ export type Database = {
           region_id?: string
           repeatable?: boolean
           required_victories?: number
+          scene_intro?: string[]
+          scene_outro?: string[]
           sort_order?: number
           summary?: string
           title?: string

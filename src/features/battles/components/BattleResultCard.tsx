@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useCaptureForBattle } from '@/features/pokemon/hooks/use-capture-for-battle'
 import { useCaptureFromBattle } from '@/features/pokemon/hooks/use-pokemon-mutations'
 import { useSpeciesByPokedexNumber } from '@/features/pokemon/hooks/use-species-catalog'
@@ -7,7 +8,16 @@ import { toFriendlyErrorMessage } from '@/shared/lib/supabase-error'
 import { ENCOUNTER_LABELS } from '../labels'
 import type { Battle, EncounterKind } from '../types'
 
-export function BattleResultCard({ battle, onDismiss }: { battle: Battle; onDismiss: () => void }) {
+export function BattleResultCard({
+  battle,
+  onDismiss,
+  children,
+}: {
+  battle: Battle
+  onDismiss: () => void
+  /** Extra story content (badge earned, closing scene) shown above "Continuar". */
+  children?: ReactNode
+}) {
   const { data: rewardEvents } = useRewardEvents({ sourceType: 'battle', sourceId: battle.id })
   const { data: wildSpecies } = useSpeciesByPokedexNumber(battle.wild_species_pokedex_number)
   const { data: capture } = useCaptureForBattle(battle.id)
@@ -63,6 +73,8 @@ export function BattleResultCard({ battle, onDismiss }: { battle: Battle; onDism
           )}
         </div>
       )}
+
+      {children}
 
       <button
         type="button"

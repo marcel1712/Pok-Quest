@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getCampaignContent,
   getCurrentEncounter,
+  listBadges,
   listCampaignProgress,
 } from './campaign-repository'
 
@@ -94,5 +95,21 @@ describe('getCurrentEncounter', () => {
   it('throws on error', async () => {
     rpcMock.mockResolvedValue({ data: null, error: { message: 'boom' } })
     await expect(getCurrentEncounter()).rejects.toEqual({ message: 'boom' })
+  })
+})
+
+describe('listBadges', () => {
+  it('returns the earned badges', async () => {
+    fromMock.mockReturnValue(
+      createQueryBuilderMock({ data: [{ node_id: 'sinnoh.oreburgh-gym' }], error: null }),
+    )
+
+    expect(await listBadges()).toEqual([{ node_id: 'sinnoh.oreburgh-gym' }])
+    expect(fromMock).toHaveBeenCalledWith('badges')
+  })
+
+  it('throws on error', async () => {
+    fromMock.mockReturnValue(createQueryBuilderMock({ data: null, error: { message: 'boom' } }))
+    await expect(listBadges()).rejects.toEqual({ message: 'boom' })
   })
 })
