@@ -508,3 +508,15 @@ Navegando dentro do app a partir do Dashboard: antes e depois, Tarefas, Foco, Jo
 **Inventário reutilizável:** `supabase/audit/privileges.sql` lista RLS, policies, grants e funções; deve ser relido após qualquer migration que crie tabela ou função.
 **Outros achados:** `index.html` declarava `lang="en"` num app em português (corrigido). Sem CSP — fica para o deploy (T-039), pois o Vite em desenvolvimento precisa de script inline.
 **Não coberto:** configurações que só existem no painel do Supabase, MFA, e backup automático (inexistente no plano gratuito). O comando de backup documentado usa Docker e não pôde ser testado aqui.
+
+## 2026-10-14 — Preparação do deploy (T-039): Vercel, com o build de produção testado antes de publicar
+
+**Hospedagem:** Vercel, como previsto no `Plan.md` e confirmado com o usuário no meio da tarefa (eu tinha assumido pelo plano sem perguntar).
+**O que foi feito no repositório:** `vercel.json` (rewrite de SPA, cabeçalhos de segurança, cache), `vite preview` servindo o build com esses mesmos cabeçalhos, um projeto Playwright `production-build` que roda os fluxos essenciais contra esse preview e falha em qualquer violação de CSP, e `npm run smoke -- <url>` para depois do deploy. Passo a passo em `docs/DEPLOY.md`.
+**O que NÃO foi feito:** o deploy em si. O CLI da Vercel não está instalado aqui e a conta é do usuário. A configuração foi validada localmente; o comportamento da Vercel (rewrite, cache imutável, HSTS) só será confirmado pelo smoke test depois do primeiro deploy.
+**CSP:** `script-src 'self'` sem `unsafe-inline`; `style-src 'self'` com `style-src-attr 'unsafe-inline'` (o React usa atributos `style` para larguras de barras e tamanho de sprites); `img-src` com `raw.githubusercontent.com`; `connect-src` com `*.supabase.co`. Verificado que bloqueia e reporta: um script inline e uma imagem de outro host injetados na página não carregaram e geraram duas violações. Fica só em produção: em desenvolvimento o Vite injeta script inline.
+**`Referrer-Policy: no-referrer`:** reduz o que o host dos sprites fica sabendo a cada imagem carregada.
+**Smoke somente leitura:** com credenciais opcionais por variável de ambiente, o smoke entra e lê todas as páginas, mas não cria tarefa nem inicia sessão — num ambiente único isso gravaria atividade falsa no histórico. "Tarefa e foco" do checklist ficam para teste manual.
+**Migrations fora do deploy, e aditivas:** o deploy da Vercel não toca o banco. A ordem é migration → `db:push` → `db:verify` → push do código; como há uma janela em que o site antigo roda sobre o banco novo, migrations devem ser compatíveis com o código já publicado. Rollback de frontend é instantâneo na Vercel; de banco é correção para frente.
+**Previews sem acesso ao banco:** as variáveis ficam só no ambiente Production da Vercel, para que um preview de PR não grave no banco real.
+**Deslize do processo:** o primeiro teste do smoke travou porque o servidor de preview rodava no mesmo processo que estava bloqueado esperando o script filho; e um comando interrompido deixou um servidor de teste vivo na porta 4176, que foi encerrado.

@@ -39,6 +39,8 @@ npx supabase migration new <name>              # new migration under supabase/mi
 npm run db:push                                  # apply pending migrations to the linked remote project
 npm run db:types                                  # regenerate src/shared/types/database.ts from remote schema
 npm run catalog:import                             # fetch species from PokéAPI, prints SQL seed to review/paste into a migration
+npm run preview                                    # serve the production build with the production security headers (CSP)
+npm run smoke -- <url>                             # post-deploy smoke test of a deployed URL (read-only)
 npm run perf:measure                               # after `npm run build`: requests/timings per route against a mocked API
 npm run campaign:seed                              # validate src/features/journey/content/ and print its SQL seed for a new migration
 npx supabase db query --linked -f <path>.sql         # run a one-off verification script (see below)
@@ -116,6 +118,16 @@ conventions:
 - Reward formulas exist in both `engine.ts` and SQL. `tests/fixtures/rule-parity.json` pins their expected
   outputs: `rule-parity.test.ts` checks the TypeScript side, `db:verify` the database side. Change all three
   together.
+
+### Deploy
+
+Vercel serves the static build; `vercel.json` holds the SPA rewrite, the cache rules and the security
+headers, including a strict Content-Security-Policy (no inline scripts; images only from the site and
+`raw.githubusercontent.com`; connections only to the site and `*.supabase.co`). `vite preview` reuses those
+headers, and the Playwright project `production-build` runs the essential flows against it and fails on any
+CSP violation — so adding an external host, an inline script or a new asset origin means updating the CSP
+in `vercel.json`. Migrations are NOT part of the deploy: apply them first (`db:push`, `db:verify`), then
+push the code, and keep them additive so the already-deployed frontend keeps working. See `docs/DEPLOY.md`.
 
 ### CI vs. local E2E
 

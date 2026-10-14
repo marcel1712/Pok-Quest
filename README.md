@@ -37,6 +37,7 @@ npm run dev
 | `npm run catalog:import` | importa a Pokédex do Platinum da PokéAPI e imprime o SQL de seed (colar numa migration) |
 | `npm run test:coverage`  | Vitest com cobertura exigida dos módulos de regra (o que o CI roda)                     |
 | `npm run db:verify`      | scripts de verificação do banco + paridade de regras TS/SQL (reverte tudo)              |
+| `npm run smoke -- <url>` | smoke test de um deploy publicado (somente leitura; ver `docs/DEPLOY.md`)               |
 | `npm run perf:measure`   | mede requisições e tempos por rota no build de produção, com API simulada               |
 | `npm run campaign:seed`  | valida o conteúdo da campanha e imprime o SQL de seed (colar numa migration)            |
 
@@ -67,3 +68,7 @@ Regra de dependência: `pages → features → shared`.
 ## Testes e CI
 
 Ver `docs/QA.md` para convenções completas. Resumo: GitHub Actions (`.github/workflows/ci.yml`) roda lint, typecheck, Vitest, build e um smoke E2E não-autenticado em todo push/PR, sem usar credenciais reais. E2E autenticado roda apenas local (`npm run test:e2e`) com o `.env` real, por enquanto.
+
+## Deploy
+
+Vercel (frontend estático) + Supabase. Passo a passo, smoke test pós-deploy e rollback em `docs/DEPLOY.md`; modelo de segurança em `docs/SECURITY.md`.

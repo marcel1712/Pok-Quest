@@ -1,12 +1,26 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+type VercelConfig = { headers: { source: string; headers: { key: string; value: string }[] }[] }
+
+// The site-wide headers from vercel.json (CSP and friends), reused by `vite preview`.
+function productionHeaders(): Record<string, string> {
+  const config = JSON.parse(
+    readFileSync(path.resolve(import.meta.dirname, 'vercel.json'), 'utf8'),
+  ) as VercelConfig
+  const siteWide = config.headers.find((entry) => entry.source === '/(.*)')?.headers ?? []
+  return Object.fromEntries(siteWide.map(({ key, value }) => [key, value]))
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // `vite preview` mirrors production: same build, same security headers.
+  preview: { headers: productionHeaders() },
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),

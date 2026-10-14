@@ -20,7 +20,8 @@
     "campaign:seed": "tsx scripts/generate-campaign-seed.ts",
     "perf:measure": "tsx scripts/measure-navigation.ts",
     "db:verify": "tsx scripts/run-db-verification.ts",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "smoke": "tsx scripts/smoke-deploy.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

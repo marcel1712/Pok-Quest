@@ -7,6 +7,25 @@ import { FakeBackend } from '../support/fake-backend.ts'
 // well-behaved backend correctly — persistence across reloads, the focus timer, retries.
 // They do NOT prove the real triggers/RLS: that is `npm run db:verify`.
 
+// A CSP violation is reported on the console, not thrown: collect and fail on them, so a
+// policy that blocks something the app needs is caught here (the production-build
+// project serves the real policy) rather than after deploying.
+const cspViolations = new WeakMap<Page, string[]>()
+
+test.beforeEach(({ page }) => {
+  const violations: string[] = []
+  cspViolations.set(page, violations)
+  page.on('console', (message) => {
+    if (/Content Security Policy|Content-Security-Policy/i.test(message.text())) {
+      violations.push(message.text())
+    }
+  })
+})
+
+test.afterEach(({ page }) => {
+  expect(cspViolations.get(page) ?? [], 'Content-Security-Policy violations').toEqual([])
+})
+
 const nav = (page: Page) => page.getByRole('navigation', { name: 'Principal' })
 
 async function addTask(page: Page, title: string) {
