@@ -12,18 +12,18 @@ export function PartyAndBox() {
   const swapPartyPositions = useSwapPartyPositions()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  if (isLoading) return <p className="text-slate-400">Carregando equipe…</p>
+  if (isLoading) return <p className="text-ink-muted">Carregando equipe…</p>
 
   if (isError) {
     return (
-      <p role="alert" className="text-red-400">
+      <p role="alert" className="text-danger">
         Não foi possível carregar sua equipe.
       </p>
     )
   }
 
   if (!pokemon || pokemon.length === 0) {
-    return <p className="text-slate-400">Você ainda não capturou nenhum Pokémon.</p>
+    return <p className="text-ink-muted">Você ainda não capturou nenhum Pokémon.</p>
   }
 
   const party = Array.from(
@@ -54,7 +54,7 @@ export function PartyAndBox() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="mb-2 font-semibold text-slate-100">Time ativo</h2>
+        <h2 className="mb-2 font-semibold text-ink">Time ativo</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
           {party.map((member, index) =>
             member ? (
@@ -62,6 +62,7 @@ export function PartyAndBox() {
                 key={member.id}
                 pokemon={member}
                 selected={member.id === selectedId}
+                animated
                 onClick={() => handleSelect(member.id)}
               />
             ) : (
@@ -69,7 +70,7 @@ export function PartyAndBox() {
                 key={`empty-${index}`}
                 type="button"
                 onClick={() => handleSelectEmptySlot(index + 1)}
-                className="flex h-24 items-center justify-center rounded border border-dashed border-slate-700 text-sm text-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="flex h-24 items-center justify-center rounded-control border border-dashed border-line-strong text-sm text-ink-muted"
               >
                 Vazio
               </button>
@@ -79,9 +80,9 @@ export function PartyAndBox() {
       </div>
 
       <div>
-        <h2 className="mb-2 font-semibold text-slate-100">Box</h2>
+        <h2 className="mb-2 font-semibold text-ink">Box</h2>
         {box.length === 0 ? (
-          <p className="text-slate-500">Nenhum Pokémon no box.</p>
+          <p className="text-ink-muted">Nenhum Pokémon no box.</p>
         ) : (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
             {box.map((member) => (
@@ -97,12 +98,12 @@ export function PartyAndBox() {
       </div>
 
       {(setPartyPosition.isError || swapPartyPositions.isError) && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {toFriendlyErrorMessage(setPartyPosition.error ?? swapPartyPositions.error)}
         </p>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-ink-muted">
         Clique num Pokémon para selecionar, depois clique em outro (ou num espaço vazio) para trocar
         de posição.
       </p>

@@ -69,6 +69,15 @@ Dependency direction is strict: `pages → features → shared`. Features don't 
 multiplier, anti-fractionation) with no Supabase dependency — it's unit-tested standalone and then mirrored
 in SQL (see below). `docs/GAME_RULES.md` documents every formula and must stay in sync with both.
 
+### Styling
+
+Design tokens live in `src/styles/index.css` (`@theme`): use the semantic utilities (`bg-surface`,
+`text-ink-muted`, `border-line`, `bg-accent`, `text-danger`, `rounded-control`, `rounded-card`) and the
+component classes defined there (`btn btn-primary|secondary|outline|ghost`, `btn-sm|lg`, `input`, `card`,
+`link`, `page-title`) — never raw palette steps like `slate-800`. Focus rings and reduced motion are
+handled globally in that file (the in-app preference is applied once, in `RootLayout`); don't add
+per-component `focus-visible:ring-*`. Shared React primitives are in `src/shared/ui/`.
+
 ### Supabase: single environment, no local DB
 
 There is exactly one Supabase project (dev = prod; this is a single-user app, documented trade-off — no

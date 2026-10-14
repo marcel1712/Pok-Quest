@@ -32,6 +32,7 @@ describe('SpeciesCatalogGrid', () => {
         types: ['grass'],
         sprite_url: null,
         official_artwork_url: null,
+        animated_sprite_url: null,
         is_starter: true,
         is_legendary: false,
         evolves_to_pokedex_number: 388,

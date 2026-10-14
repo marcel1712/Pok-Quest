@@ -34,24 +34,24 @@ export function BattleResultCard({
       : `sessão de foco de pelo menos ${battle.commitment_min_duration_minutes} min`
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded border border-slate-800 p-6 text-center">
+    <div className="card flex flex-col items-center gap-3 p-6 text-center">
       <span className="text-5xl" aria-hidden="true">
         {glyph}
       </span>
-      <p className="text-xl font-bold text-slate-100">
+      <p className="text-xl font-bold text-ink">
         {isVictory ? `Vitória contra ${label}!` : 'Encontro não concluído'}
       </p>
-      <p className="max-w-sm text-slate-400">
+      <p className="max-w-sm text-ink-muted">
         {isVictory
           ? `Compromisso cumprido: ${commitmentText}.`
           : 'O compromisso combinado não foi cumprido — sem XP de bônus, mas sem penalidade.'}
       </p>
-      {isVictory && <p className="text-2xl font-semibold text-emerald-400">+{xpAwarded} XP</p>}
+      {isVictory && <p className="text-2xl font-semibold text-accent-soft">+{xpAwarded} XP</p>}
 
       {canCapture && wildSpecies && (
-        <div className="flex flex-col items-center gap-2 rounded border border-slate-800 bg-slate-900/50 p-3">
+        <div className="flex flex-col items-center gap-2 rounded-control border border-line bg-surface/50 p-3">
           <SpeciesSprite species={wildSpecies} />
-          <p className="text-slate-300">
+          <p className="text-ink-soft">
             {capture
               ? `${wildSpecies.name} capturado!`
               : `Um ${wildSpecies.name}${battle.wild_level ? ` Nv. ${battle.wild_level}` : ''} apareceu!`}
@@ -61,13 +61,13 @@ export function BattleResultCard({
               type="button"
               onClick={() => captureFromBattle.mutate(battle.id)}
               disabled={captureFromBattle.isPending}
-              className="rounded bg-emerald-500 px-4 py-2 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
+              className="btn btn-primary"
             >
               {captureFromBattle.isPending ? 'Capturando…' : 'Capturar'}
             </button>
           )}
           {captureFromBattle.isError && (
-            <p role="alert" className="text-sm text-red-400">
+            <p role="alert" className="text-sm text-danger">
               {toFriendlyErrorMessage(captureFromBattle.error)}
             </p>
           )}
@@ -76,11 +76,7 @@ export function BattleResultCard({
 
       {children}
 
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="rounded bg-slate-800 px-5 py-2 text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-      >
+      <button type="button" onClick={onDismiss} className="btn btn-secondary">
         Continuar
       </button>
     </div>

@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import type { Battle } from '@/features/battles/types'
 import { useBadges } from '../hooks/use-badges'
 import { useJourney } from '../hooks/use-journey'
@@ -21,15 +22,22 @@ export function VictoryEpilogue({ battle }: { battle: Battle }) {
   if (!earnedBadge && outro.length === 0) return null
 
   return (
-    <div className="flex max-w-sm flex-col gap-2 rounded border border-slate-800 bg-slate-900/50 p-3">
+    <div className="flex max-w-sm flex-col gap-2 rounded-control border border-line bg-surface/50 p-3">
       {earnedBadge && entry.node.badge_name && (
-        <p className="font-semibold text-amber-300">
+        // The one celebratory moment worth animating: a rare, earned reward. MotionConfig
+        // in RootLayout drops the movement under reduced-motion settings.
+        <motion.p
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+          className="font-semibold text-warning"
+        >
           <span aria-hidden="true">🏅 </span>
           Você conquistou a {entry.node.badge_name}!
-        </p>
+        </motion.p>
       )}
       {outro.map((line) => (
-        <p key={line} className="text-sm text-slate-300">
+        <p key={line} className="text-sm text-ink-soft">
           {line}
         </p>
       ))}

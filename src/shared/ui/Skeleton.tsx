@@ -10,7 +10,7 @@ export function Skeleton({ lines = 3, label = 'Carregando…' }: { lines?: numbe
         <div
           key={index}
           aria-hidden="true"
-          className="h-4 animate-pulse rounded bg-slate-800 motion-reduce:animate-none"
+          className="h-4 animate-pulse rounded-control bg-surface-raised motion-reduce:animate-none"
           style={{ width: `${100 - index * 15}%` }}
         />
       ))}

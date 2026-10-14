@@ -370,3 +370,29 @@ Registro de escolhas tomadas durante a implementação, com data e justificativa
 **Offline:** aviso baseado em `navigator.onLine`. É só um indício (estar "online" não garante que a API responde) e o texto não promete que alterações feitas offline serão salvas.
 **Layout testado por E2E com API simulada:** `tests/e2e/dashboard-layout.spec.ts` abre o Dashboard em 360, 768 e 1920 px com 60 tarefas de título longo e um time de 6, e verifica que não há rolagem horizontal e que as ações cabem na tela. Usa uma sessão falsa e intercepta todo request ao host do Supabase — nunca toca o projeto real — então roda também no CI. Conferi as capturas de 360 e 1920 px manualmente.
 **Limitações:** não há prefetch nem medição de requests (T-034); o design visual segue o padrão provisório (T-033); as tarefas do Dashboard continuam sem encontro vinculado.
+
+## 2026-10-14 — Design system (T-033): tokens semânticos no Tailwind e classes de componente em CSS
+
+**Decisão:** `src/styles/index.css` define os tokens em `@theme` (cores semânticas como `canvas`, `surface`, `line`, `ink`, `ink-muted`, `accent`, `danger`, `warning`; raios `control`/`card`; sombra `card`; fonte do sistema) e, em `@layer components`, as classes `btn` (+ `btn-primary`/`secondary`/`outline`/`ghost`, `btn-sm`/`btn-lg`), `input`, `card`, `link` e `page-title`. Os componentes não usam mais passos crus da paleta (`slate-800`, `emerald-500`...): um codemod trocou todos, em 39 arquivos.
+**Por que classes CSS e não componentes React para botão/card/input:** o mesmo estilo vale para `<button>`, `<Link>` e `<NavLink>`, e a troca foi mecânica, sem mexer em props, refs ou testes. Componentes React ficaram só onde há comportamento: `ProgressBar` e `Skeleton` em `src/shared/ui/`. Não foi adotado shadcn/ui (citado no Plan.md): o app não tem modal, menu ou combobox que justifique a dependência.
+**Foco visível global:** uma regra `:focus-visible` na camada base substitui os `focus-visible:ring-*` espalhados. Alguns controles (Editar, Arquivar, Sair, navegação) não tinham indicador nenhum; agora todos têm.
+**Contraste:** texto secundário que usava `slate-500` (cerca de 4:1 sobre o fundo, abaixo do AA para texto pequeno) passou para `ink-muted` (`slate-400`, cerca de 7:1). Os valores no comentário do CSS são estimativas a partir da paleta; não rodei uma ferramenta de auditoria.
+**Movimento:** a preferência "Reduzir movimento" é aplicada num único lugar (`RootLayout`): um atributo `data-reduce-motion` desliga transições/animações CSS e um `MotionConfig` faz o mesmo para componentes Motion; com a preferência desligada, ambos seguem o `prefers-reduced-motion` do sistema. Animação nova só em dois pontos: o preenchimento das barras de progresso (XP, jornada) e a insígnia conquistada no resultado da batalha.
+**Sprites:** `SpeciesSprite` passou a preferir o sprite em pixel art, ampliado com `image-rendering: pixelated`; antes usava a arte oficial (uma pintura) com esse mesmo filtro, o que a deixava serrilhada. A arte oficial virou reserva, sem o filtro.
+**Navegação:** barra fixa no topo, com o item ativo destacado e conteúdo limitado a uma largura máxima.
+**Verificação:** o E2E com API simulada agora também abre Tarefas, Foco, Equipe, Jornada e Configurações em 360 px e confere que não há rolagem lateral. Olhei capturas de Foco, Equipe e Configurações nesse tamanho; com os dados reais do usuário não foi testado.
+**Limitações:** sem tema claro; sem ícones (continuam emojis); a tela de login e as cenas de batalha só receberam os tokens, não um redesenho.
+
+## 2026-10-14 — Card de encontro passa a usar o nível real do time
+
+**Decisão:** a tela de Foco calcula o nível médio do time ativo (`computePartyAverageLevel`) e o passa ao card de encontro, em vez do `NO_PARTY` fixo. O compromisso exibido já vem com a redução por time (1 ponto a cada 10 níveis médios).
+**Motivo:** o card dizia "você ainda não tem Pokémon capturados" mesmo com o time cheio, e pedia um compromisso maior que o que o banco exigiria. O trigger do banco usa a mesma média e a mesma fórmula, então o que o card mostra é aceito.
+**Ainda pendente:** o bônus de XP por time (`v_team_multiplier` em `resolve_pending_battle`) continua fixo em 1.
+
+## 2026-10-14 — Sprites animados (GIF) no time ativo
+
+**Decisão:** o catálogo ganhou `animated_sprite_url`, importado da PokéAPI (`sprites.versions.generation-v.black-white.animated`). É o único conjunto animado em pixel art que a API tem; apesar de ser dos jogos Black/White, cobre as 210 espécies da Pokédex do Platinum. `SpeciesSprite` aceita `animated` e é usado assim no time ativo (página Equipe e Dashboard) e no Pokémon selvagem do próximo encontro (card de encontro da tela de Foco e card Foco do Dashboard, ambos a 96 px); box, catálogo e escolha do inicial continuam com o sprite estático.
+**Reduzir movimento:** um GIF não pode ser pausado por CSS, então com a preferência do app ou do sistema ligada o componente mostra o sprite estático.
+**Reserva em cadeia:** se o GIF falhar ao carregar, cai para o sprite estático, depois para a arte oficial, depois para o glifo genérico.
+**Tamanho fixo:** os GIFs não são quadrados e o reset do Tailwind (`img { height: auto }`) deixava cada um com uma altura, desalinhando a fileira; a imagem agora tem largura e altura explícitas com `object-contain`. No Dashboard o sprite do time passou de 48 para 96 px (o mesmo do próximo encontro), em 3 colunas no celular e em telas largas e 6 no tablet, para caber sem estourar o card.
+**Custo:** cada GIF tem de 20 a 110 kB e continua vindo do CDN da PokéAPI no GitHub; só os do time ativo (até 6) são carregados.

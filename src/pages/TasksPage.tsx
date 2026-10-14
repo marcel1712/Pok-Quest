@@ -12,7 +12,7 @@ function TaskGroup({ title, tasks }: { title: string; tasks: Task[] }) {
   if (tasks.length === 0) return null
   return (
     <div>
-      <h2 className="mb-2 text-sm font-semibold text-slate-400">{title}</h2>
+      <h2 className="mb-2 text-sm font-semibold text-ink-muted">{title}</h2>
       <ul className="flex flex-col gap-2">
         {tasks.map((task) => (
           <TaskItem key={task.id} task={task} />
@@ -29,9 +29,9 @@ export function TasksPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-slate-100">Tarefas</h1>
+      <h1 className="page-title">Tarefas</h1>
 
-      <div className="rounded border border-slate-800 p-4">
+      <div className="card">
         <TaskForm
           submitLabel="Adicionar tarefa"
           pendingLabel="Adicionando…"
@@ -39,7 +39,7 @@ export function TasksPage() {
           onSubmit={(input) => createTask.mutate(input)}
         />
         {createTask.isError && (
-          <p role="alert" className="mt-2 text-sm text-red-400">
+          <p role="alert" className="mt-2 text-sm text-danger">
             {toFriendlyErrorMessage(createTask.error)}
           </p>
         )}
@@ -47,16 +47,16 @@ export function TasksPage() {
 
       <TaskFilterTabs value={statusFilter} onChange={setStatusFilter} />
 
-      {isLoading && <p className="text-slate-400">Carregando tarefas…</p>}
+      {isLoading && <p className="text-ink-muted">Carregando tarefas…</p>}
 
       {isError && (
-        <p role="alert" className="text-red-400">
+        <p role="alert" className="text-danger">
           {toFriendlyErrorMessage(error)}
         </p>
       )}
 
       {tasks && tasks.length === 0 && (
-        <p className="text-slate-400">
+        <p className="text-ink-muted">
           {statusFilter === 'pending'
             ? 'Nenhuma tarefa pendente. Adicione uma acima.'
             : 'Nada por aqui ainda.'}

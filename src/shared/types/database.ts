@@ -715,6 +715,7 @@ export type Database = {
       }
       species_catalog: {
         Row: {
+          animated_sprite_url: string | null
           catalog_version: number
           evolution_min_level: number | null
           evolves_to_pokedex_number: number | null
@@ -728,6 +729,7 @@ export type Database = {
           types: string[]
         }
         Insert: {
+          animated_sprite_url?: string | null
           catalog_version?: number
           evolution_min_level?: number | null
           evolves_to_pokedex_number?: number | null
@@ -741,6 +743,7 @@ export type Database = {
           types: string[]
         }
         Update: {
+          animated_sprite_url?: string | null
           catalog_version?: number
           evolution_min_level?: number | null
           evolves_to_pokedex_number?: number | null

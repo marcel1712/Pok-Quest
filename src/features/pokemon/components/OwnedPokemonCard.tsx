@@ -2,14 +2,18 @@ import { useSpeciesByPokedexNumber } from '../hooks/use-species-catalog'
 import type { OwnedPokemon } from '../types'
 import { computeXpProgress } from '../xp'
 import { SpeciesSprite } from './SpeciesSprite'
+import { ProgressBar } from '@/shared/ui/ProgressBar'
 
 export function OwnedPokemonCard({
   pokemon,
   selected,
+  animated = false,
   onClick,
 }: {
   pokemon: OwnedPokemon
   selected: boolean
+  /** Show the moving sprite — used for the active party. */
+  animated?: boolean
   onClick: () => void
 }) {
   const { data: species } = useSpeciesByPokedexNumber(pokemon.pokedex_number)
@@ -19,26 +23,14 @@ export function OwnedPokemonCard({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded border p-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-        selected ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800'
+      className={`flex flex-col items-center gap-1 rounded-control border p-2 ${
+        selected ? 'border-accent bg-accent/10' : 'border-line'
       }`}
     >
-      {species && <SpeciesSprite species={species} />}
-      <p className="text-sm text-slate-200">{pokemon.nickname ?? species?.name ?? '…'}</p>
-      <p className="text-xs text-slate-500">Nv. {pokemon.level}</p>
-      <div
-        role="progressbar"
-        aria-label="XP"
-        aria-valuenow={Math.round(xpProgress.progress * 100)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        className="h-1 w-full overflow-hidden rounded bg-slate-800"
-      >
-        <div
-          className="h-full bg-emerald-500"
-          style={{ width: `${Math.round(xpProgress.progress * 100)}%` }}
-        />
-      </div>
+      {species && <SpeciesSprite species={species} animated={animated} />}
+      <p className="text-sm text-ink">{pokemon.nickname ?? species?.name ?? '…'}</p>
+      <p className="text-xs text-ink-muted">Nv. {pokemon.level}</p>
+      <ProgressBar label="XP" value={Math.round(xpProgress.progress * 100)} size="sm" />
     </button>
   )
 }

@@ -16,6 +16,7 @@ import {
   listBadges,
   listCampaignProgress,
 } from '@/features/journey/api/campaign-repository'
+import { listOwnedPokemon } from '@/features/pokemon/api/owned-pokemon-repository'
 import { getSpeciesByPokedexNumber } from '@/features/pokemon/api/species-catalog-repository'
 import { listRewardEvents } from '@/features/rewards/api/reward-events-repository'
 import { getProfile, updateFocusPreferences } from '@/features/settings/api/profile-repository'
@@ -29,6 +30,15 @@ vi.mock('@/features/journey/api/campaign-repository', () => ({
   listCampaignProgress: vi.fn(),
   getCurrentEncounter: vi.fn(),
   listBadges: vi.fn(),
+}))
+
+vi.mock('@/features/pokemon/api/owned-pokemon-repository', () => ({
+  listOwnedPokemon: vi.fn(),
+  getCaptureForBattle: vi.fn(),
+  captureFromBattle: vi.fn(),
+  setPartyPosition: vi.fn(),
+  swapPartyPositions: vi.fn(),
+  confirmEvolution: vi.fn(),
 }))
 
 vi.mock('@/features/pokemon/api/species-catalog-repository', () => ({
@@ -71,6 +81,7 @@ const getCampaignContentMock = vi.mocked(getCampaignContent)
 const listCampaignProgressMock = vi.mocked(listCampaignProgress)
 const getCurrentEncounterMock = vi.mocked(getCurrentEncounter)
 const listBadgesMock = vi.mocked(listBadges)
+const listOwnedPokemonMock = vi.mocked(listOwnedPokemon)
 const getSpeciesByPokedexNumberMock = vi.mocked(getSpeciesByPokedexNumber)
 
 const wildEncounter = {
@@ -92,6 +103,7 @@ const starly = {
   types: ['normal', 'flying'],
   sprite_url: null,
   official_artwork_url: null,
+  animated_sprite_url: null,
   is_starter: false,
   is_legendary: false,
   evolves_to_pokedex_number: 397,
@@ -199,6 +211,7 @@ beforeEach(() => {
   listCampaignProgressMock.mockReset().mockResolvedValue([])
   getCurrentEncounterMock.mockReset().mockResolvedValue(wildEncounter)
   listBadgesMock.mockReset().mockResolvedValue([])
+  listOwnedPokemonMock.mockReset().mockResolvedValue([])
   localStorage.clear()
   getSpeciesByPokedexNumberMock.mockReset().mockResolvedValue(starly)
   getActiveSessionMock.mockReset()
@@ -317,6 +330,39 @@ describe('FocusPage — encounter before starting', () => {
     renderPage()
     expect(await screen.findByText('Líder de Ginásio: Roark')).toBeInTheDocument()
     expect(screen.queryByText('Roark tira o capacete.')).not.toBeInTheDocument()
+  })
+
+  it('lowers the commitment shown according to the real party level', async () => {
+    getActiveSessionMock.mockResolvedValue(null)
+    getCurrentEncounterMock.mockResolvedValue({
+      ...wildEncounter,
+      encounter_kind: 'rival',
+      encounter_difficulty: 3,
+      wild_species_pokedex_number: null,
+      wild_level: null,
+    })
+    listOwnedPokemonMock.mockResolvedValue([
+      {
+        id: 'p1',
+        owner_id: 'owner-1',
+        pokedex_number: 390,
+        nickname: null,
+        level: 14,
+        xp: 2800,
+        party_position: 1,
+        pending_evolution_to_pokedex_number: null,
+        captured_at: '2026-10-13T00:00:00Z',
+        created_at: '2026-10-13T00:00:00Z',
+        updated_at: '2026-10-13T00:00:00Z',
+      },
+    ])
+    renderPage()
+
+    // Difficulty 3, average level 14 -> one point off -> 2 minutes.
+    expect(
+      await screen.findByText('sessão de foco de pelo menos 2 min', { exact: false }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Nível médio do time: 14')).toBeInTheDocument()
   })
 
   it('falls back to the plain start form when the encounter cannot be loaded', async () => {

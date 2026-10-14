@@ -24,8 +24,8 @@ export function TaskFilterTabs({
           onClick={() => onChange(filter.value)}
           className={
             value === filter.value
-              ? 'rounded bg-slate-800 px-3 py-1.5 font-semibold text-emerald-400'
-              : 'rounded px-3 py-1.5 text-slate-400 hover:text-slate-200'
+              ? 'rounded-control bg-surface-raised px-3 py-1.5 font-semibold text-accent-soft'
+              : 'rounded-control px-3 py-1.5 text-ink-muted hover:text-ink'
           }
         >
           {filter.label}

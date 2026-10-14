@@ -27,13 +27,13 @@ export function TasksWidget({ className }: { className?: string }) {
       error={error}
       onRetry={() => refetch()}
     >
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-ink-muted">
         {priority.todayCount} para hoje · {priority.pendingCount}{' '}
         {priority.pendingCount === 1 ? 'pendente' : 'pendentes'}
       </p>
 
       {priority.tasks.length === 0 ? (
-        <p className="text-slate-400">Nada urgente. Adicione uma tarefa abaixo.</p>
+        <p className="text-ink-muted">Nada urgente. Adicione uma tarefa abaixo.</p>
       ) : (
         <ul aria-label="Tarefas prioritárias" className="flex flex-col gap-2">
           {priority.tasks.map((task) => (
@@ -43,7 +43,7 @@ export function TasksWidget({ className }: { className?: string }) {
       )}
 
       {priority.hiddenCount > 0 && (
-        <p className="text-xs text-slate-500">+ {priority.hiddenCount} em Tarefas</p>
+        <p className="text-xs text-ink-muted">+ {priority.hiddenCount} em Tarefas</p>
       )}
 
       <TaskForm
@@ -53,7 +53,7 @@ export function TasksWidget({ className }: { className?: string }) {
         onSubmit={(input) => createTask.mutate(input)}
       />
       {createTask.isError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {toFriendlyErrorMessage(createTask.error)}
         </p>
       )}

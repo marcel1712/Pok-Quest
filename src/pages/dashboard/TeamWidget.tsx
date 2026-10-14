@@ -3,6 +3,7 @@ import { useOwnedPokemon } from '@/features/pokemon/hooks/use-owned-pokemon'
 import { useSpeciesCatalog } from '@/features/pokemon/hooks/use-species-catalog'
 import { computeXpProgress } from '@/features/pokemon/xp'
 import { WidgetCard } from './WidgetCard'
+import { ProgressBar } from '@/shared/ui/ProgressBar'
 
 export function TeamWidget({ className }: { className?: string }) {
   const { data: pokemon, isLoading, error, refetch } = useOwnedPokemon()
@@ -29,31 +30,29 @@ export function TeamWidget({ className }: { className?: string }) {
       onRetry={() => refetch()}
     >
       {party.length === 0 ? (
-        <p className="text-slate-400">
+        <p className="text-ink-muted">
           Seu time está vazio. Escolha um inicial ou capture um Pokémon selvagem.
         </p>
       ) : (
-        <ul aria-label="Time ativo" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <ul
+          aria-label="Time ativo"
+          className="grid grid-cols-3 gap-x-1 gap-y-3 sm:grid-cols-6 sm:gap-x-2 lg:grid-cols-3"
+        >
           {party.map((entry) => {
             const entrySpecies = species?.find((s) => s.pokedex_number === entry.pokedex_number)
             const progress = Math.round(computeXpProgress(entry.level, entry.xp).progress * 100)
             return (
               <li key={entry.id} className="flex min-w-0 flex-col items-center gap-1 text-center">
-                {entrySpecies && <SpeciesSprite species={entrySpecies} size={48} />}
-                <span className="w-full truncate text-xs text-slate-200">
+                {entrySpecies && <SpeciesSprite species={entrySpecies} size={96} animated />}
+                <span className="w-full truncate text-xs text-ink">
                   {entry.nickname ?? entrySpecies?.name ?? '…'}
                 </span>
-                <span className="text-xs text-slate-500">Nv. {entry.level}</span>
-                <div
-                  role="progressbar"
-                  aria-label={`XP de ${entry.nickname ?? entrySpecies?.name ?? 'Pokémon'}`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={progress}
-                  className="h-1 w-full overflow-hidden rounded bg-slate-800"
-                >
-                  <div className="h-full bg-emerald-500" style={{ width: `${progress}%` }} />
-                </div>
+                <span className="text-xs text-ink-muted">Nv. {entry.level}</span>
+                <ProgressBar
+                  label={`XP de ${entry.nickname ?? entrySpecies?.name ?? 'Pokémon'}`}
+                  value={progress}
+                  size="sm"
+                />
               </li>
             )
           })}
@@ -61,11 +60,11 @@ export function TeamWidget({ className }: { className?: string }) {
       )}
 
       {(boxCount > 0 || pendingEvolutions > 0) && (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-ink-muted">
           {boxCount > 0 && `${boxCount} na box`}
           {boxCount > 0 && pendingEvolutions > 0 && ' · '}
           {pendingEvolutions > 0 && (
-            <span className="text-amber-300">
+            <span className="text-warning">
               {pendingEvolutions === 1
                 ? '1 evolução esperando confirmação'
                 : `${pendingEvolutions} evoluções esperando confirmação`}

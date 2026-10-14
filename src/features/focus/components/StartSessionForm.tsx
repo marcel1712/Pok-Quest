@@ -21,7 +21,7 @@ export function StartSessionForm() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="mb-2 text-sm text-slate-400">Duração</p>
+        <p className="mb-2 text-sm text-ink-muted">Duração</p>
         <div className="flex flex-wrap gap-2">
           {preferences.presetsMinutes.map((preset) => (
             <button
@@ -29,12 +29,12 @@ export function StartSessionForm() {
               type="button"
               aria-pressed={minutes === preset}
               onClick={() => setMinutes(preset)}
-              className="rounded px-3 py-1.5 text-sm text-slate-400 outline-none hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-emerald-400 aria-pressed:bg-slate-800 aria-pressed:font-semibold aria-pressed:text-emerald-400"
+              className="rounded-control px-3 py-1.5 text-sm text-ink-muted hover:text-ink aria-pressed:bg-surface-raised aria-pressed:font-semibold aria-pressed:text-accent-soft"
             >
               {preset} min
             </button>
           ))}
-          <label className="flex items-center gap-1 text-sm text-slate-400">
+          <label className="flex items-center gap-1 text-sm text-ink-muted">
             personalizado:
             <input
               type="number"
@@ -42,7 +42,7 @@ export function StartSessionForm() {
               max={120}
               value={minutes}
               onChange={(event) => setMinutes(Number(event.target.value))}
-              className="w-16 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="input w-16 px-2 py-1"
             />
             min
           </label>
@@ -51,14 +51,14 @@ export function StartSessionForm() {
 
       {tasks && tasks.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label htmlFor="focus-task" className="text-sm text-slate-400">
+          <label htmlFor="focus-task" className="text-sm text-ink-muted">
             Vincular a uma tarefa (opcional)
           </label>
           <select
             id="focus-task"
             value={taskId}
             onChange={(event) => setTaskId(event.target.value)}
-            className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            className="input text-sm"
           >
             <option value="">Nenhuma</option>
             {tasks.map((task) => (
@@ -74,13 +74,13 @@ export function StartSessionForm() {
         type="button"
         onClick={handleStart}
         disabled={startSession.isPending || minutes < 1}
-        className="self-start rounded bg-emerald-500 px-6 py-2.5 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
+        className="btn btn-primary btn-lg self-start"
       >
         {startSession.isPending ? 'Iniciando…' : 'Iniciar foco'}
       </button>
 
       {startSession.isError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {toFriendlyErrorMessage(startSession.error)}
         </p>
       )}

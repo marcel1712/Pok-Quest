@@ -18,7 +18,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm text-slate-300">
+        <label htmlFor="email" className="text-sm text-ink-soft">
           Email
         </label>
         <input
@@ -28,12 +28,12 @@ export function LoginForm() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          className="input"
         />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm text-slate-300">
+        <label htmlFor="password" className="text-sm text-ink-soft">
           Senha
         </label>
         <input
@@ -43,21 +43,17 @@ export function LoginForm() {
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          className="input"
         />
       </div>
 
       {mutation.isError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           Email ou senha incorretos.
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={mutation.isPending}
-        className="rounded bg-emerald-500 px-4 py-2 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
-      >
+      <button type="submit" disabled={mutation.isPending} className="btn btn-primary">
         {mutation.isPending ? 'Entrando…' : 'Entrar'}
       </button>
     </form>

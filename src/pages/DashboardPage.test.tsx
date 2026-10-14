@@ -106,6 +106,7 @@ function species(pokedexNumber: number, name: string) {
     types: ['normal'],
     sprite_url: null,
     official_artwork_url: null,
+    animated_sprite_url: null,
     is_starter: pokedexNumber === 390,
     is_legendary: false,
     evolves_to_pokedex_number: null,
@@ -216,7 +217,11 @@ beforeEach(() => {
   listSpeciesCatalogMock
     .mockReset()
     .mockResolvedValue([species(390, 'Chimchar'), species(396, 'Starly')])
-  getSpeciesByPokedexNumberMock.mockReset().mockResolvedValue(species(396, 'Starly'))
+  getSpeciesByPokedexNumberMock.mockReset().mockResolvedValue({
+    ...species(396, 'Starly'),
+    sprite_url: 'https://example.com/396.png',
+    animated_sprite_url: 'https://example.com/396.gif',
+  })
   listOwnedPokemonMock.mockReset().mockResolvedValue([
     {
       id: 'p1',
@@ -255,6 +260,10 @@ describe('DashboardPage', () => {
     // Focus: the stored next encounter, and one obvious action.
     expect(await screen.findByText('Starly selvagem · Nv. 3')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Iniciar foco' })).toHaveAttribute('href', '/focus')
+    expect(screen.getByRole('img', { name: 'Starly' })).toHaveAttribute(
+      'src',
+      'https://example.com/396.gif',
+    )
 
     // Team and journey summaries.
     const team = await screen.findByRole('list', { name: 'Time ativo' })

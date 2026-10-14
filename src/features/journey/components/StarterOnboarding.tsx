@@ -33,10 +33,10 @@ export function StarterOnboarding() {
       : null
 
   return (
-    <div className="flex flex-col gap-4 rounded border border-emerald-500/60 p-4">
+    <div className="flex flex-col gap-4 rounded-control border border-accent/60 p-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-100">Escolha seu Pokémon inicial</h2>
-        <p className="mt-1 text-sm text-slate-400">
+        <h2 className="text-lg font-semibold text-ink">Escolha seu Pokémon inicial</h2>
+        <p className="mt-1 text-sm text-ink-muted">
           Sua jornada por Sinnoh começa com um parceiro. Ele ganha experiência a cada encontro que
           você vence com tarefas e sessões de foco. A escolha é definitiva.
         </p>
@@ -53,17 +53,17 @@ export function StarterOnboarding() {
               aria-checked={isSelected}
               disabled={chooseStarter.isPending}
               onClick={() => setSelected(entry.pokedex_number)}
-              className={`flex flex-col items-center gap-1 rounded border p-3 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                isSelected ? 'border-emerald-400 bg-emerald-500/10' : 'border-slate-700'
+              className={`flex flex-col items-center gap-1 rounded-control border p-3 ${
+                isSelected ? 'border-accent-soft bg-accent/10' : 'border-line-strong'
               }`}
             >
               <SpeciesSprite species={entry} size={96} />
-              <span className="font-semibold text-slate-100">{entry.name}</span>
-              <span className="text-xs text-slate-400">
+              <span className="font-semibold text-ink">{entry.name}</span>
+              <span className="text-xs text-ink-muted">
                 Tipo {entry.types.map((type) => TYPE_LABELS[type] ?? type).join(' / ')}
               </span>
               {entry.evolution_min_level && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-ink-muted">
                   Evolui no nível {entry.evolution_min_level}
                 </span>
               )}
@@ -73,7 +73,7 @@ export function StarterOnboarding() {
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {toFriendlyErrorMessage(error)}
         </p>
       )}
@@ -82,7 +82,7 @@ export function StarterOnboarding() {
         type="button"
         disabled={!selectedStarter || chooseStarter.isPending}
         onClick={() => selectedStarter && chooseStarter.mutate(selectedStarter.pokedex_number)}
-        className="self-start rounded bg-emerald-500 px-4 py-2 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-40"
+        className="btn btn-primary self-start"
       >
         {chooseStarter.isPending
           ? 'Confirmando…'

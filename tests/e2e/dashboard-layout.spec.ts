@@ -49,6 +49,7 @@ function species(pokedexNumber: number, name: string) {
     types: ['normal'],
     sprite_url: null,
     official_artwork_url: null,
+    animated_sprite_url: null,
     is_starter: false,
     is_legendary: false,
     evolves_to_pokedex_number: null,
@@ -224,3 +225,38 @@ for (const viewport of VIEWPORTS) {
     })
   })
 }
+
+const PAGES = [
+  { path: '/tasks', heading: 'Tarefas' },
+  { path: '/focus', heading: 'Foco' },
+  { path: '/team', heading: 'Equipe' },
+  { path: '/journey', heading: 'Jornada' },
+  { path: '/settings', heading: 'Configurações' },
+]
+
+test.describe('every page on a phone (360px)', () => {
+  test.use({ viewport: { width: 360, height: 740 } })
+
+  for (const { path, heading } of PAGES) {
+    test(`${path} renders without scrolling sideways`, async ({ page }) => {
+      await openDashboard(page)
+      await page
+        .getByRole('navigation', { name: 'Principal' })
+        .getByRole('link', { name: heading })
+        .click()
+      await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible()
+      await page.waitForLoadState('networkidle')
+
+      const overflow = await page.evaluate<number>(
+        'document.documentElement.scrollWidth - document.documentElement.clientWidth',
+      )
+      expect(overflow, 'horizontal overflow in px').toBeLessThanOrEqual(0)
+      if (process.env.SHOT_DIR) {
+        await page.screenshot({
+          path: `${process.env.SHOT_DIR}/page${path.replace('/', '-')}.png`,
+          fullPage: true,
+        })
+      }
+    })
+  }
+})

@@ -6,17 +6,17 @@ export function FocusHistorySummary() {
   if (isLoading || isError || !summary) return null
 
   return (
-    <div className="flex gap-6 rounded border border-slate-800 p-4 text-sm">
+    <div className="card flex gap-6 text-sm">
       <div>
-        <p className="text-slate-400">Hoje</p>
-        <p className="text-lg font-semibold text-slate-100">
+        <p className="text-ink-muted">Hoje</p>
+        <p className="text-lg font-semibold text-ink">
           {summary.today.sessionCount} {summary.today.sessionCount === 1 ? 'sessão' : 'sessões'} ·{' '}
           {summary.today.focusedMinutes} min
         </p>
       </div>
       <div>
-        <p className="text-slate-400">Últimos 7 dias</p>
-        <p className="text-lg font-semibold text-slate-100">
+        <p className="text-ink-muted">Últimos 7 dias</p>
+        <p className="text-lg font-semibold text-ink">
           {summary.last7Days.sessionCount}{' '}
           {summary.last7Days.sessionCount === 1 ? 'sessão' : 'sessões'} ·{' '}
           {summary.last7Days.focusedMinutes} min

@@ -1,6 +1,7 @@
 import { useBadges } from '@/features/journey/hooks/use-badges'
 import { useJourney } from '@/features/journey/hooks/use-journey'
 import { WidgetCard } from './WidgetCard'
+import { ProgressBar } from '@/shared/ui/ProgressBar'
 
 export function JourneyWidget({ className }: { className?: string }) {
   const { journey, objective, isLoading, isError, error } = useJourney()
@@ -20,26 +21,17 @@ export function JourneyWidget({ className }: { className?: string }) {
       error={isError ? error : null}
     >
       {journey.length === 0 ? (
-        <p className="text-slate-400">Nenhum conteúdo de campanha disponível ainda.</p>
+        <p className="text-ink-muted">Nenhum conteúdo de campanha disponível ainda.</p>
       ) : (
         <>
           <div className="flex items-baseline justify-between gap-3">
-            <p className="min-w-0 truncate text-slate-100">
+            <p className="min-w-0 truncate text-ink">
               {objective ? objective.node.title : 'História concluída'}
             </p>
-            <p className="shrink-0 text-lg font-semibold text-slate-100">{percent}%</p>
+            <p className="shrink-0 text-lg font-semibold text-ink">{percent}%</p>
           </div>
-          <div
-            role="progressbar"
-            aria-label="Conclusão da história"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={percent}
-            className="h-2 overflow-hidden rounded bg-slate-800"
-          >
-            <div className="h-full bg-emerald-500" style={{ width: `${percent}%` }} />
-          </div>
-          <p className="text-sm text-slate-400">
+          <ProgressBar label="Conclusão da história" value={percent} />
+          <p className="text-sm text-ink-muted">
             {completedCount} de {journey.length} etapas · {badges?.length ?? 0}/{badgeTotal}{' '}
             insígnias
           </p>

@@ -35,38 +35,38 @@ export function EncounterCard({
   const commitment = getViableCommitments(encounter, party).find((c) => c.type === commitmentType)
 
   return (
-    <div className="flex flex-col gap-3 rounded border border-slate-800 p-4">
+    <div className="card flex flex-col gap-3">
       <div className="flex items-center gap-3">
         {wild ? (
-          <SpeciesSprite species={wild.species} />
+          <SpeciesSprite species={wild.species} size={96} animated />
         ) : (
           <span className="text-3xl" aria-hidden="true">
             {glyph}
           </span>
         )}
         <div>
-          {locationName && <p className="text-xs text-slate-400">{locationName}</p>}
-          <p className="font-semibold text-slate-100">
+          {locationName && <p className="text-xs text-ink-muted">{locationName}</p>}
+          <p className="font-semibold text-ink">
             {wild
               ? `${wild.species.name} selvagem · Nv. ${wild.level}`
               : opponentName
                 ? `${label}: ${opponentName}`
                 : label}
           </p>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-muted">
             Dificuldade {encounter.difficulty}/5 · {'●'.repeat(encounter.difficulty)}
             {'○'.repeat(5 - encounter.difficulty)}
           </p>
         </div>
       </div>
 
-      <p className="text-sm text-slate-500">
-        Nível médio do time: {party.averageLevel}
-        {party.averageLevel === 0 && ' — você ainda não tem Pokémon capturados'}
+      <p className="text-sm text-ink-muted">
+        Nível médio do time: {Math.round(party.averageLevel)}
+        {party.averageLevel === 0 && ' — seu time ativo está vazio'}
       </p>
 
       {commitment && (
-        <p className="text-slate-300">
+        <p className="text-ink-soft">
           Compromisso:{' '}
           {commitment.type === 'task'
             ? `tarefa de dificuldade ≥ ${commitment.minDifficulty}`
@@ -75,23 +75,15 @@ export function EncounterCard({
         </p>
       )}
 
-      {rewardText && <p className="text-sm text-amber-300">Recompensa: {rewardText}</p>}
+      {rewardText && <p className="text-sm text-warning">Recompensa: {rewardText}</p>}
 
       <div className="flex gap-3">
         {commitment && (
-          <button
-            type="button"
-            onClick={() => onAccept(commitment)}
-            className="rounded bg-emerald-500 px-4 py-2 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
-          >
+          <button type="button" onClick={() => onAccept(commitment)} className="btn btn-primary">
             Aceitar encontro
           </button>
         )}
-        <button
-          type="button"
-          onClick={onSkip}
-          className="rounded px-4 py-2 text-slate-400 outline-none hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-emerald-400"
-        >
+        <button type="button" onClick={onSkip} className="btn btn-ghost">
           Focar sem encontro
         </button>
       </div>

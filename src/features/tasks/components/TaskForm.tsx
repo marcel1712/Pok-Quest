@@ -69,10 +69,10 @@ export function TaskForm({
           placeholder="O que você precisa fazer?"
           value={values.title}
           onChange={(event) => setValues((v) => ({ ...v, title: event.target.value }))}
-          className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-lg font-medium text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          className="input text-lg font-medium"
         />
         {fieldErrors.title && (
-          <p role="alert" className="text-sm text-red-400">
+          <p role="alert" className="text-sm text-danger">
             {fieldErrors.title}
           </p>
         )}
@@ -82,16 +82,16 @@ export function TaskForm({
         <button
           type="button"
           onClick={() => setShowDetails(true)}
-          className="self-start text-sm text-slate-400 hover:text-slate-200"
+          className="self-start text-sm text-ink-muted hover:text-ink"
         >
           + detalhes (descrição, dificuldade, data)
         </button>
       )}
 
       {showDetails && (
-        <div className="flex flex-col gap-3 rounded border border-slate-800 bg-slate-900/50 p-3">
+        <div className="flex flex-col gap-3 rounded-control border border-line bg-surface/50 p-3">
           <div className="flex flex-col gap-1">
-            <label htmlFor={`${formId}-description`} className="text-sm text-slate-400">
+            <label htmlFor={`${formId}-description`} className="text-sm text-ink-muted">
               Descrição
             </label>
             <textarea
@@ -99,10 +99,10 @@ export function TaskForm({
               value={values.description}
               onChange={(event) => setValues((v) => ({ ...v, description: event.target.value }))}
               rows={2}
-              className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="input text-sm"
             />
             {fieldErrors.description && (
-              <p role="alert" className="text-sm text-red-400">
+              <p role="alert" className="text-sm text-danger">
                 {fieldErrors.description}
               </p>
             )}
@@ -110,7 +110,7 @@ export function TaskForm({
 
           <div className="flex flex-wrap gap-4">
             <div className="flex flex-col gap-1">
-              <label htmlFor={`${formId}-difficulty`} className="text-sm text-slate-400">
+              <label htmlFor={`${formId}-difficulty`} className="text-sm text-ink-muted">
                 Dificuldade (1-5)
               </label>
               <input
@@ -122,17 +122,17 @@ export function TaskForm({
                 onChange={(event) =>
                   setValues((v) => ({ ...v, difficulty: Number(event.target.value) }))
                 }
-                className="w-20 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="input w-20 text-sm"
               />
               {fieldErrors.difficulty && (
-                <p role="alert" className="text-sm text-red-400">
+                <p role="alert" className="text-sm text-danger">
                   {fieldErrors.difficulty}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor={`${formId}-due-date`} className="text-sm text-slate-400">
+              <label htmlFor={`${formId}-due-date`} className="text-sm text-ink-muted">
                 Data
               </label>
               <input
@@ -140,10 +140,10 @@ export function TaskForm({
                 type="date"
                 value={values.dueDate}
                 onChange={(event) => setValues((v) => ({ ...v, dueDate: event.target.value }))}
-                className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="input text-sm"
               />
               {fieldErrors.dueDate && (
-                <p role="alert" className="text-sm text-red-400">
+                <p role="alert" className="text-sm text-danger">
                   {fieldErrors.dueDate}
                 </p>
               )}
@@ -153,19 +153,11 @@ export function TaskForm({
       )}
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded bg-emerald-500 px-4 py-2 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
-        >
+        <button type="submit" disabled={isSubmitting} className="btn btn-primary">
           {isSubmitting ? pendingLabel : submitLabel}
         </button>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded px-4 py-2 text-slate-400 hover:text-slate-200"
-          >
+          <button type="button" onClick={onCancel} className="btn btn-ghost">
             Cancelar
           </button>
         )}

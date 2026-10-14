@@ -10,7 +10,7 @@ export function FocusPreferencesForm() {
   const [longBreak, setLongBreak] = useState(preferences.restBreakMinutes.long)
   const [error, setError] = useState<string | null>(null)
 
-  if (isLoading) return <p className="text-slate-400">Carregando…</p>
+  if (isLoading) return <p className="text-ink-muted">Carregando…</p>
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -37,14 +37,11 @@ export function FocusPreferencesForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded border border-slate-800 p-4"
-    >
-      <h2 className="font-semibold text-slate-100">Pomodoro</h2>
+    <form onSubmit={handleSubmit} className="card flex flex-col gap-4">
+      <h2 className="font-semibold text-ink">Pomodoro</h2>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="presets" className="text-sm text-slate-400">
+        <label htmlFor="presets" className="text-sm text-ink-muted">
           Presets de duração (minutos, separados por vírgula)
         </label>
         <input
@@ -52,13 +49,13 @@ export function FocusPreferencesForm() {
           type="text"
           value={presetsText}
           onChange={(event) => setPresetsText(event.target.value)}
-          className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          className="input"
         />
       </div>
 
       <div className="flex gap-4">
         <div className="flex flex-col gap-1">
-          <label htmlFor="short-break" className="text-sm text-slate-400">
+          <label htmlFor="short-break" className="text-sm text-ink-muted">
             Descanso curto (min)
           </label>
           <input
@@ -68,11 +65,11 @@ export function FocusPreferencesForm() {
             max={60}
             value={shortBreak}
             onChange={(event) => setShortBreak(Number(event.target.value))}
-            className="w-20 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            className="input w-20"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="long-break" className="text-sm text-slate-400">
+          <label htmlFor="long-break" className="text-sm text-ink-muted">
             Descanso longo (min)
           </label>
           <input
@@ -82,12 +79,12 @@ export function FocusPreferencesForm() {
             max={60}
             value={longBreak}
             onChange={(event) => setLongBreak(Number(event.target.value))}
-            className="w-20 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            className="input w-20"
           />
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-ink-soft">
         <input
           type="checkbox"
           checked={preferences.reduceMotion}
@@ -99,7 +96,7 @@ export function FocusPreferencesForm() {
       </label>
 
       {error && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
@@ -107,13 +104,13 @@ export function FocusPreferencesForm() {
       <button
         type="submit"
         disabled={updatePreferences.isPending}
-        className="self-start rounded bg-emerald-500 px-5 py-2 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
+        className="btn btn-primary self-start"
       >
         {updatePreferences.isPending ? 'Salvando…' : 'Salvar'}
       </button>
 
       {updatePreferences.isSuccess && (
-        <p role="status" className="text-sm text-emerald-400">
+        <p role="status" className="text-sm text-accent-soft">
           Preferências salvas.
         </p>
       )}

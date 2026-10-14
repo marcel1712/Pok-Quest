@@ -7,11 +7,11 @@ import { useFocusHistory } from '@/features/focus/hooks/use-focus-history'
 import { useSessionClock } from '@/features/focus/hooks/use-session-clock'
 import { useCurrentEncounter } from '@/features/journey/hooks/use-current-encounter'
 import { useJourney } from '@/features/journey/hooks/use-journey'
+import { SpeciesSprite } from '@/features/pokemon/components/SpeciesSprite'
 import { useSpeciesByPokedexNumber } from '@/features/pokemon/hooks/use-species-catalog'
 import { WidgetCard } from './WidgetCard'
 
-const ACTION_CLASS =
-  'self-start rounded bg-emerald-500 px-4 py-2 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300'
+const ACTION_CLASS = 'self-start btn btn-primary'
 
 export function FocusWidget({ className }: { className?: string }) {
   const activeSession = useActiveFocusSession()
@@ -42,7 +42,7 @@ export function FocusWidget({ className }: { className?: string }) {
     >
       {clock ? (
         <>
-          <p className="text-slate-100">
+          <p className="text-ink">
             {clock.phase === 'awaiting_confirmation'
               ? 'O tempo planejado terminou. Falta confirmar a conclusão.'
               : clock.phase === 'paused'
@@ -56,13 +56,18 @@ export function FocusWidget({ className }: { className?: string }) {
       ) : (
         <>
           {encounterLabel ? (
-            <p className="text-slate-100">
-              <span className="text-slate-400">Próximo encontro: </span>
-              {encounterLabel}
-              {node && <span className="text-slate-400"> — {node.title}</span>}
-            </p>
+            <div className="flex items-center gap-3">
+              {wildSpecies && encounter?.wild_level && (
+                <SpeciesSprite species={wildSpecies} size={96} animated />
+              )}
+              <p className="min-w-0 text-ink">
+                <span className="text-ink-muted">Próximo encontro: </span>
+                {encounterLabel}
+                {node && <span className="text-ink-muted"> — {node.title}</span>}
+              </p>
+            </div>
           ) : (
-            <p className="text-slate-400">Nenhum encontro à espera. Dá para focar mesmo assim.</p>
+            <p className="text-ink-muted">Nenhum encontro à espera. Dá para focar mesmo assim.</p>
           )}
           <Link to="/focus" className={ACTION_CLASS}>
             Iniciar foco
@@ -71,7 +76,7 @@ export function FocusWidget({ className }: { className?: string }) {
       )}
 
       {summary && (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-ink-muted">
           Hoje: {summary.today.focusedMinutes} min em {summary.today.sessionCount}{' '}
           {summary.today.sessionCount === 1 ? 'sessão' : 'sessões'}
         </p>

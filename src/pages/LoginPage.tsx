@@ -10,9 +10,9 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <h1 className="text-center text-2xl font-bold text-slate-100">PokéQuest</h1>
+        <h1 className="page-title text-center">PokéQuest</h1>
         <LoginForm />
       </div>
     </div>

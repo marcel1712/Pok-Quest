@@ -39,17 +39,17 @@ export function ActiveSessionPanel({
   const isBusy = pause.isPending || resume.isPending || confirm.isPending || cancel.isPending
 
   return (
-    <div className="flex flex-col items-center gap-6 rounded border border-slate-800 p-6">
+    <div className="card flex flex-col items-center gap-6 p-6">
       <div className="text-center">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-ink-muted">
           {clock.phase === 'paused' && 'Pausado'}
           {clock.phase === 'running' && 'Em foco'}
           {clock.phase === 'awaiting_confirmation' && 'Tempo esgotado!'}
         </p>
-        {linkedTask && <p className="mt-1 text-sm text-slate-500">Tarefa: {linkedTask.title}</p>}
+        {linkedTask && <p className="mt-1 text-sm text-ink-muted">Tarefa: {linkedTask.title}</p>}
       </div>
 
-      <p className="text-6xl font-bold text-slate-100 tabular-nums" role="timer">
+      <p className="text-6xl font-bold text-ink tabular-nums" role="timer">
         {clock.phase === 'awaiting_confirmation' ? '00:00' : formatDuration(clock.remainingSeconds)}
       </p>
 
@@ -58,10 +58,10 @@ export function ActiveSessionPanel({
         aria-valuenow={progressPercent}
         aria-valuemin={0}
         aria-valuemax={100}
-        className="h-2 w-full overflow-hidden rounded bg-slate-800"
+        className="h-2 w-full overflow-hidden rounded-control bg-surface-raised"
       >
         <div
-          className="h-full bg-emerald-500 motion-reduce:transition-none"
+          className="h-full bg-accent motion-reduce:transition-none"
           style={{
             width: `${progressPercent}%`,
             transition: reduceMotion ? 'none' : 'width 1s linear',
@@ -70,20 +70,20 @@ export function ActiveSessionPanel({
       </div>
 
       {mutationError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {toFriendlyErrorMessage(mutationError)}
         </p>
       )}
 
       {clock.phase === 'awaiting_confirmation' && (
         <div className="flex flex-col items-center gap-3">
-          <p className="text-slate-300">O tempo planejado terminou. Confirma a conclusão?</p>
+          <p className="text-ink-soft">O tempo planejado terminou. Confirma a conclusão?</p>
           <div className="flex gap-3">
             <button
               type="button"
               onClick={() => confirm.mutate(session, { onSuccess: () => onConfirmed?.() })}
               disabled={isBusy}
-              className="rounded bg-emerald-500 px-6 py-2.5 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
+              className="btn btn-primary btn-lg"
             >
               Confirmar conclusão
             </button>
@@ -91,7 +91,7 @@ export function ActiveSessionPanel({
               type="button"
               onClick={() => setIsConfirmingCancel(true)}
               disabled={isBusy}
-              className="rounded px-4 py-2.5 text-slate-400 hover:text-slate-200"
+              className="btn btn-ghost btn-lg"
             >
               Cancelar
             </button>
@@ -106,7 +106,7 @@ export function ActiveSessionPanel({
               type="button"
               onClick={() => pause.mutate(session)}
               disabled={isBusy}
-              className="rounded bg-slate-800 px-5 py-2.5 font-medium text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:opacity-60"
+              className="btn btn-secondary btn-lg"
             >
               Pausar
             </button>
@@ -115,7 +115,7 @@ export function ActiveSessionPanel({
               type="button"
               onClick={() => resume.mutate(session)}
               disabled={isBusy}
-              className="rounded bg-emerald-500 px-5 py-2.5 font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
+              className="btn btn-primary btn-lg"
             >
               Retomar
             </button>
@@ -126,7 +126,7 @@ export function ActiveSessionPanel({
               type="button"
               onClick={() => setIsConfirmingCancel(true)}
               disabled={isBusy}
-              className="rounded px-4 py-2.5 text-slate-400 hover:text-slate-200"
+              className="btn btn-ghost btn-lg"
             >
               Cancelar
             </button>
@@ -135,31 +135,29 @@ export function ActiveSessionPanel({
       )}
 
       {isConfirmingCancel && (
-        <div className="flex items-center gap-3 rounded border border-slate-800 bg-slate-900/50 p-3">
-          <span className="text-slate-300">
-            Cancelar esta sessão? O tempo não será aproveitado.
-          </span>
+        <div className="flex items-center gap-3 rounded-control border border-line bg-surface/50 p-3">
+          <span className="text-ink-soft">Cancelar esta sessão? O tempo não será aproveitado.</span>
           <button
             type="button"
             onClick={() => {
               cancel.mutate(session)
               setIsConfirmingCancel(false)
             }}
-            className="font-semibold text-red-400 hover:text-red-300"
+            className="font-semibold text-danger hover:underline"
           >
             Sim, cancelar
           </button>
           <button
             type="button"
             onClick={() => setIsConfirmingCancel(false)}
-            className="text-slate-400 hover:text-slate-200"
+            className="text-ink-muted hover:text-ink"
           >
             Voltar
           </button>
         </div>
       )}
 
-      <p className="max-w-sm text-center text-xs text-slate-500">
+      <p className="max-w-sm text-center text-xs text-ink-muted">
         Você não precisa manter esta aba aberta ou a tela ativa: o progresso é calculado pela hora
         de início salva no servidor, não por um cronômetro local.
       </p>

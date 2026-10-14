@@ -33,7 +33,7 @@ export function TaskItem({ task }: { task: Task }) {
 
   if (isEditing) {
     return (
-      <li className="rounded border border-slate-800 bg-slate-900/50 p-3">
+      <li className="rounded-control border border-line bg-surface/50 p-3">
         <TaskForm
           initialValues={{
             title: task.title,
@@ -57,7 +57,7 @@ export function TaskItem({ task }: { task: Task }) {
   }
 
   return (
-    <li className="flex items-start gap-3 rounded border border-slate-800 p-3">
+    <li className="flex items-start gap-3 rounded-control border border-line p-3">
       <button
         type="button"
         onClick={() =>
@@ -65,26 +65,24 @@ export function TaskItem({ task }: { task: Task }) {
         }
         aria-pressed={task.status === 'completed'}
         aria-label={task.status === 'completed' ? 'Reabrir tarefa' : 'Concluir tarefa'}
-        className="mt-0.5 h-5 w-5 shrink-0 rounded border border-slate-600 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 aria-pressed:border-emerald-500 aria-pressed:bg-emerald-500"
+        className="mt-0.5 h-5 w-5 shrink-0 rounded-control border border-line-strong aria-pressed:border-accent aria-pressed:bg-accent"
       />
 
       <div className="flex-1">
         <p
           className={
-            task.status === 'completed'
-              ? 'text-slate-500 line-through'
-              : 'font-medium text-slate-100'
+            task.status === 'completed' ? 'text-ink-muted line-through' : 'font-medium text-ink'
           }
         >
           {task.title}
         </p>
-        {task.description && <p className="mt-1 text-sm text-slate-400">{task.description}</p>}
-        <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+        {task.description && <p className="mt-1 text-sm text-ink-muted">{task.description}</p>}
+        <div className="mt-1 flex flex-wrap gap-2 text-xs text-ink-muted">
           <span>{DIFFICULTY_LABEL[task.difficulty] ?? task.difficulty}</span>
           {task.due_date && <span>{task.due_date}</span>}
         </div>
         {errorMessage && (
-          <p role="alert" className="mt-1 text-sm text-red-400">
+          <p role="alert" className="mt-1 text-sm text-danger">
             {errorMessage}
           </p>
         )}
@@ -95,7 +93,7 @@ export function TaskItem({ task }: { task: Task }) {
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="text-slate-400 hover:text-slate-200"
+            className="text-ink-muted hover:text-ink"
           >
             Editar
           </button>
@@ -103,21 +101,21 @@ export function TaskItem({ task }: { task: Task }) {
 
         {isConfirmingArchive ? (
           <span className="flex items-center gap-2">
-            <span className="text-slate-400">Arquivar?</span>
+            <span className="text-ink-muted">Arquivar?</span>
             <button
               type="button"
               onClick={() => {
                 archiveTask.mutate(task)
                 setIsConfirmingArchive(false)
               }}
-              className="font-semibold text-red-400 hover:text-red-300"
+              className="font-semibold text-danger hover:underline"
             >
               Sim
             </button>
             <button
               type="button"
               onClick={() => setIsConfirmingArchive(false)}
-              className="text-slate-400 hover:text-slate-200"
+              className="text-ink-muted hover:text-ink"
             >
               Cancelar
             </button>
@@ -127,7 +125,7 @@ export function TaskItem({ task }: { task: Task }) {
             <button
               type="button"
               onClick={() => setIsConfirmingArchive(true)}
-              className="text-slate-400 hover:text-slate-200"
+              className="text-ink-muted hover:text-ink"
             >
               Arquivar
             </button>

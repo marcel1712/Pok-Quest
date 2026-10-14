@@ -15,10 +15,13 @@ export function DashboardPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-slate-100">Dashboard</h1>
+      <h1 className="page-title">Dashboard</h1>
 
       {!isOnline && (
-        <p role="status" className="rounded border border-amber-400/60 p-3 text-sm text-amber-300">
+        <p
+          role="status"
+          className="rounded-control border border-warning/60 p-3 text-sm text-warning"
+        >
           Você está offline. O que aparece aqui são os últimos dados carregados, e alterações podem
           não ser salvas até a conexão voltar.
         </p>

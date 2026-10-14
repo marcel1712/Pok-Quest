@@ -5,6 +5,7 @@ import { StarterOnboarding } from '@/features/journey/components/StarterOnboardi
 import { useBadges } from '@/features/journey/hooks/use-badges'
 import { useJourney } from '@/features/journey/hooks/use-journey'
 import { toFriendlyErrorMessage } from '@/shared/lib/supabase-error'
+import { ProgressBar } from '@/shared/ui/ProgressBar'
 
 const STEPS_PER_PAGE = 10
 
@@ -29,8 +30,8 @@ export function JourneyPage() {
   return (
     <section className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-100">Jornada</h1>
-        <p className="mt-2 text-slate-400">
+        <h1 className="page-title">Jornada</h1>
+        <p className="mt-2 text-ink-muted">
           Vença encontros na tela de Foco para avançar por Sinnoh. Nada aqui regride em dias sem
           atividade.
         </p>
@@ -38,37 +39,28 @@ export function JourneyPage() {
 
       <StarterOnboarding />
 
-      {isLoading && <p className="text-slate-400">Carregando…</p>}
+      {isLoading && <p className="text-ink-muted">Carregando…</p>}
 
       {isError && (
-        <p role="alert" className="text-red-400">
+        <p role="alert" className="text-danger">
           {toFriendlyErrorMessage(error)}
         </p>
       )}
 
       {!isLoading && !isError && journey.length === 0 && (
-        <p className="text-slate-400">Nenhum conteúdo de campanha disponível ainda.</p>
+        <p className="text-ink-muted">Nenhum conteúdo de campanha disponível ainda.</p>
       )}
 
       {journey.length > 0 && (
         <>
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-ink-muted">
                 {completedCount} de {journey.length} etapas concluídas
               </p>
-              <p className="text-lg font-semibold text-slate-100">{completionPercent}%</p>
+              <p className="text-lg font-semibold text-ink">{completionPercent}%</p>
             </div>
-            <div
-              role="progressbar"
-              aria-label="Conclusão da história"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={completionPercent}
-              className="h-2 overflow-hidden rounded bg-slate-800"
-            >
-              <div className="h-full bg-emerald-500" style={{ width: `${completionPercent}%` }} />
-            </div>
+            <ProgressBar label="Conclusão da história" value={completionPercent} />
           </div>
 
           <BadgeCase journey={journey} badges={badges ?? []} />
@@ -84,20 +76,16 @@ export function JourneyPage() {
                 type="button"
                 disabled={page === 0}
                 onClick={() => setSelectedPage(page - 1)}
-                className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:opacity-40"
+                className="btn btn-outline btn-sm"
               >
                 Anterior
               </button>
-              <div className="flex flex-col items-center gap-1 text-sm text-slate-400">
+              <div className="flex flex-col items-center gap-1 text-sm text-ink-muted">
                 <span>
                   Página {page + 1} de {pageCount}
                 </span>
                 {page !== objectivePage && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPage(null)}
-                    className="text-emerald-400 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-emerald-400"
-                  >
+                  <button type="button" onClick={() => setSelectedPage(null)} className="link">
                     Ir para onde parei
                   </button>
                 )}
@@ -106,7 +94,7 @@ export function JourneyPage() {
                 type="button"
                 disabled={page === pageCount - 1}
                 onClick={() => setSelectedPage(page + 1)}
-                className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:opacity-40"
+                className="btn btn-outline btn-sm"
               >
                 Próxima
               </button>

@@ -35,16 +35,12 @@ export function RestBreakTimer({
   }, [remaining, onDone])
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded border border-slate-800 p-4">
-      <p className="text-slate-300">Descanso</p>
-      <p className="text-4xl font-bold text-slate-100 tabular-nums" role="timer">
+    <div className="card flex flex-col items-center gap-3">
+      <p className="text-ink-soft">Descanso</p>
+      <p className="text-4xl font-bold text-ink tabular-nums" role="timer">
         {formatDuration(remaining)}
       </p>
-      <button
-        type="button"
-        onClick={onSkip}
-        className="text-sm text-slate-400 outline-none hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-emerald-400"
-      >
+      <button type="button" onClick={onSkip} className="text-sm text-ink-muted hover:text-ink">
         Pular descanso
       </button>
     </div>

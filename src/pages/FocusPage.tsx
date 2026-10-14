@@ -20,7 +20,9 @@ import { VictoryEpilogue } from '@/features/journey/components/VictoryEpilogue'
 import { useCurrentEncounter } from '@/features/journey/hooks/use-current-encounter'
 import { useJourney } from '@/features/journey/hooks/use-journey'
 import { useSeenScenes } from '@/features/journey/hooks/use-seen-scenes'
+import { useOwnedPokemon } from '@/features/pokemon/hooks/use-owned-pokemon'
 import { useSpeciesByPokedexNumber } from '@/features/pokemon/hooks/use-species-catalog'
+import { computePartyAverageLevel } from '@/features/pokemon/party'
 import {
   useFocusPreferences,
   useUpdateFocusPreferences,
@@ -33,10 +35,6 @@ type RestState =
   | { phase: 'battleResult'; focusSessionId: string }
   | { phase: 'prompt' }
   | { phase: 'resting'; minutes: number }
-
-// The party's level is not applied to the shown commitment yet — always neutral. The
-// database accepts this: its own minimum can only be equal or lower (team reduction).
-const NO_PARTY = { averageLevel: 0 }
 
 export function FocusPage() {
   const queryClient = useQueryClient()
@@ -65,6 +63,10 @@ export function FocusPage() {
     (entry) => entry.node.id === currentEncounter?.campaign_node_id,
   )?.node
   const { hasSeen, markSeen } = useSeenScenes()
+  // The real party lowers the commitment shown (1 point per 10 average levels); the
+  // database applies the same reduction when it validates the battle.
+  const { data: ownedPokemon } = useOwnedPokemon()
+  const party = { averageLevel: computePartyAverageLevel(ownedPokemon ?? []) }
   const [encounterSkipped, setEncounterSkipped] = useState(false)
   const startSession = useStartFocusSession()
   const createBattle = useCreateBattle()
@@ -120,8 +122,8 @@ export function FocusPage() {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-100">Foco</h1>
-        <label className="flex items-center gap-2 text-sm text-slate-400">
+        <h1 className="page-title">Foco</h1>
+        <label className="flex items-center gap-2 text-sm text-ink-muted">
           <input
             type="checkbox"
             checked={preferences.soundEnabled}
@@ -133,10 +135,10 @@ export function FocusPage() {
         </label>
       </div>
 
-      {isIdleLoading && <p className="text-slate-400">Carregando…</p>}
+      {isIdleLoading && <p className="text-ink-muted">Carregando…</p>}
 
       {isError && (
-        <p role="alert" className="text-red-400">
+        <p role="alert" className="text-danger">
           {toFriendlyErrorMessage(error)}
         </p>
       )}
@@ -163,7 +165,7 @@ export function FocusPage() {
               ? { species: wildSpecies, level: currentEncounter.wild_level }
               : undefined
           }
-          party={NO_PARTY}
+          party={party}
           commitmentType="focusSession"
           onAccept={handleAcceptEncounter}
           onSkip={() => setEncounterSkipped(true)}
@@ -171,7 +173,7 @@ export function FocusPage() {
       )}
 
       {isIdle && (!encounter || encounterSkipped) && (
-        <div className="rounded border border-slate-800 p-4">
+        <div className="card">
           <StartSessionForm />
         </div>
       )}
@@ -207,7 +209,7 @@ export function FocusPage() {
             onConfirmed={handleConfirmed}
           />
           {linkedBattle && (
-            <p className="text-center text-xs text-slate-500">
+            <p className="text-center text-xs text-ink-muted">
               Encontro: {ENCOUNTER_LABELS[linkedBattle.encounter_kind as EncounterKind].label} —
               compromisso: foco ≥ {linkedBattle.commitment_min_duration_minutes} min
             </p>

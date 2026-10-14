@@ -29,15 +29,10 @@ export function WidgetCard({
   children: ReactNode
 }) {
   return (
-    <section
-      className={`flex min-w-0 flex-col gap-3 rounded border border-slate-800 p-4 ${className}`}
-    >
+    <section className={`card flex min-w-0 flex-col gap-3 ${className}`}>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-semibold text-slate-100">{title}</h2>
-        <Link
-          to={linkTo}
-          className="shrink-0 text-sm text-emerald-400 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-emerald-400"
-        >
+        <h2 className="font-semibold text-ink">{title}</h2>
+        <Link to={linkTo} className="link shrink-0 text-sm">
           {linkLabel}
         </Link>
       </div>
@@ -45,14 +40,10 @@ export function WidgetCard({
       {isLoading ? (
         <Skeleton label={`Carregando ${title.toLowerCase()}…`} />
       ) : error ? (
-        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-red-400">
+        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-danger">
           <span>{toFriendlyErrorMessage(error)}</span>
           {onRetry && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="rounded border border-slate-700 px-2 py-1 text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
+            <button type="button" onClick={onRetry} className="btn btn-outline btn-sm">
               Tentar de novo
             </button>
           )}
