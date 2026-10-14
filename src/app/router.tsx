@@ -25,6 +25,7 @@ export const router = createBrowserRouter([
           { path: 'focus', lazy: pageLoaders['/focus'] },
           { path: 'team', lazy: pageLoaders['/team'] },
           { path: 'journey', lazy: pageLoaders['/journey'] },
+          { path: 'history', lazy: pageLoaders['/history'] },
           { path: 'settings', lazy: pageLoaders['/settings'] },
         ],
       },

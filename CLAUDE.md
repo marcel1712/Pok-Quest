@@ -12,7 +12,7 @@ findings are logged (dated, in Portuguese) in `docs/DECISIONS.md`; game-balance 
 are in `docs/GAME_RULES.md`; test conventions are in `docs/QA.md`.
 
 Stack: React 19 + Vite + TypeScript (strict), Tailwind CSS v4, React Router, TanStack Query, Zustand, Zod,
-Motion, Supabase (Auth + PostgreSQL + RLS).
+Supabase (Auth + PostgreSQL + RLS).
 
 ## Commands
 

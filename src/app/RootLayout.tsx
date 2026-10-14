@@ -10,6 +10,7 @@ const navItems: { to: PagePath; label: string }[] = [
   { to: '/focus', label: 'Foco' },
   { to: '/team', label: 'Equipe' },
   { to: '/journey', label: 'Jornada' },
+  { to: '/history', label: 'Histórico' },
   { to: '/settings', label: 'Configurações' },
 ]
 

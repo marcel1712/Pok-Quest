@@ -486,6 +486,55 @@ export type Database = {
           },
         ]
       }
+      evolution_events: {
+        Row: {
+          from_pokedex_number: number
+          id: string
+          occurred_at: string
+          owned_pokemon_id: string | null
+          owner_id: string
+          to_pokedex_number: number
+        }
+        Insert: {
+          from_pokedex_number: number
+          id?: string
+          occurred_at?: string
+          owned_pokemon_id?: string | null
+          owner_id: string
+          to_pokedex_number: number
+        }
+        Update: {
+          from_pokedex_number?: number
+          id?: string
+          occurred_at?: string
+          owned_pokemon_id?: string | null
+          owner_id?: string
+          to_pokedex_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'evolution_events_from_pokedex_number_fkey'
+            columns: ['from_pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
+          },
+          {
+            foreignKeyName: 'evolution_events_owned_pokemon_id_fkey'
+            columns: ['owned_pokemon_id']
+            isOneToOne: false
+            referencedRelation: 'owned_pokemon'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'evolution_events_to_pokedex_number_fkey'
+            columns: ['to_pokedex_number']
+            isOneToOne: false
+            referencedRelation: 'species_catalog'
+            referencedColumns: ['pokedex_number']
+          },
+        ]
+      }
       focus_sessions: {
         Row: {
           accumulated_pause_seconds: number
@@ -632,30 +681,36 @@ export type Database = {
       productivity_events: {
         Row: {
           created_at: string
+          difficulty: number | null
           event_type: string
           id: string
           occurred_at: string
           owner_id: string
           source_id: string
           source_type: string
+          title: string | null
         }
         Insert: {
           created_at?: string
+          difficulty?: number | null
           event_type?: string
           id?: string
           occurred_at: string
           owner_id: string
           source_id: string
           source_type: string
+          title?: string | null
         }
         Update: {
           created_at?: string
+          difficulty?: number | null
           event_type?: string
           id?: string
           occurred_at?: string
           owner_id?: string
           source_id?: string
           source_type?: string
+          title?: string | null
         }
         Relationships: []
       }
@@ -818,7 +873,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      history_entries: {
+        Row: {
+          amount: number | null
+          detail: string | null
+          entry_id: string | null
+          kind: string | null
+          occurred_at: string | null
+          owner_id: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       capture_from_battle: {
@@ -891,6 +957,18 @@ export type Database = {
         Args: { p_owner_id: string }
         Returns: string
       }
+      get_history_summary: {
+        Args: never
+        Returns: {
+          captures: number
+          focus_minutes: number
+          focus_sessions: number
+          period: string
+          tasks_completed: number
+          victories: number
+          xp_earned: number
+        }[]
+      }
       get_or_create_encounter: {
         Args: never
         Returns: {
@@ -912,6 +990,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      purge_old_tasks: { Args: { p_retention?: string }; Returns: number }
       resolve_pending_battle: {
         Args: {
           p_focus_session_id: string

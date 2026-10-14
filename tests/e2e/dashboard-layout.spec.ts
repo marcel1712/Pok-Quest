@@ -58,6 +58,7 @@ const PAGES = [
   { path: '/focus', heading: 'Foco' },
   { path: '/team', heading: 'Equipe' },
   { path: '/journey', heading: 'Jornada' },
+  { path: '/history', heading: 'Histórico' },
   { path: '/settings', heading: 'Configurações' },
 ]
 

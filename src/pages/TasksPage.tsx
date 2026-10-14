@@ -3,7 +3,7 @@ import { TaskFilterTabs } from '@/features/tasks/components/TaskFilterTabs'
 import { TaskForm } from '@/features/tasks/components/TaskForm'
 import { TaskItem } from '@/features/tasks/components/TaskItem'
 import { useCreateTask } from '@/features/tasks/hooks/use-task-mutations'
-import { TASK_HISTORY_LIMIT } from '@/features/tasks/limits'
+import { TASK_HISTORY_LIMIT, TASK_RETENTION_DAYS } from '@/features/tasks/limits'
 import { useTasks } from '@/features/tasks/hooks/use-tasks'
 import { scheduleTasks, todayIsoDate } from '@/features/tasks/scheduling'
 import type { Task, TaskStatus } from '@/features/tasks/types'
@@ -77,6 +77,13 @@ export function TasksPage() {
             )
           })()}
         </div>
+      )}
+
+      {statusFilter !== 'pending' && (
+        <p className="text-sm text-ink-muted">
+          Tarefas {statusFilter === 'completed' ? 'concluídas' : 'arquivadas'} são apagadas depois
+          de {TASK_RETENTION_DAYS} dias. O registro continua no Histórico.
+        </p>
       )}
 
       {tasks && tasks.length > 0 && statusFilter !== 'pending' && (

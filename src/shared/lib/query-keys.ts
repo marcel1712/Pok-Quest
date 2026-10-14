@@ -59,6 +59,11 @@ export const queryKeys = {
     all: ['gameProgress'] as const,
     detail: () => ['gameProgress', 'detail'] as const,
   },
+  history: {
+    all: ['history'] as const,
+    entries: (days: number) => ['history', 'entries', days] as const,
+    summary: () => ['history', 'summary'] as const,
+  },
   captures: {
     all: ['captures'] as const,
     forBattle: (battleId: string) => ['captures', 'forBattle', battleId] as const,

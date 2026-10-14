@@ -87,6 +87,17 @@ export function FocusPreferencesForm() {
       <label className="flex items-center gap-2 text-sm text-ink-soft">
         <input
           type="checkbox"
+          checked={preferences.soundEnabled}
+          onChange={(event) =>
+            updatePreferences.mutate({ ...preferences, soundEnabled: event.target.checked })
+          }
+        />
+        Tocar som ao terminar uma sessão de foco
+      </label>
+
+      <label className="flex items-center gap-2 text-sm text-ink-soft">
+        <input
+          type="checkbox"
           checked={preferences.reduceMotion}
           onChange={(event) =>
             updatePreferences.mutate({ ...preferences, reduceMotion: event.target.checked })

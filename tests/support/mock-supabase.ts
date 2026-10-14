@@ -131,7 +131,38 @@ const TABLES: Record<string, unknown[]> = {
   ],
   profiles: [{ id: OWNER_ID, timezone: 'UTC', settings: {}, created_at: NOW, updated_at: NOW }],
   focus_sessions: [],
+  history_entries: [
+    {
+      owner_id: OWNER_ID,
+      kind: 'task',
+      occurred_at: NOW,
+      entry_id: 'e1',
+      title:
+        'Uma tarefa de título bem comprido para testar a quebra de linha no histórico em telas estreitas',
+      detail: null,
+      amount: 3,
+    },
+    {
+      owner_id: OWNER_ID,
+      kind: 'battle',
+      occurred_at: NOW,
+      entry_id: 'e2',
+      title: 'Starly',
+      detail: 'wild · Rota 201',
+      amount: 45,
+    },
+  ],
 }
+
+const HISTORY_SUMMARY = ['today', 'last7Days', 'last30Days', 'allTime'].map((period) => ({
+  period,
+  tasks_completed: 12,
+  focus_sessions: 34,
+  focus_minutes: 1234,
+  victories: 56,
+  xp_earned: 123456,
+  captures: 7,
+}))
 
 const ENCOUNTER = {
   id: '20000000-0000-4000-8000-000000000000',
@@ -168,12 +199,13 @@ async function answer(route: Route, options: MockSupabaseOptions) {
 
   const resource = url.pathname.replace('/rest/v1/', '')
   const filters = [...url.searchParams.entries()]
-    .filter(([key]) => !['select', 'order', 'limit'].includes(key))
+    .filter(([key]) => !['select', 'order', 'limit', 'occurred_at'].includes(key))
     .map(([key, value]) => `${key}=${value}`)
     .join('&')
   options.onRequest?.(`${request.method()} ${resource}${filters ? `?${filters}` : ''}`)
 
   if (url.pathname.endsWith('/rpc/get_or_create_encounter')) return json(ENCOUNTER)
+  if (url.pathname.endsWith('/rpc/get_history_summary')) return json(HISTORY_SUMMARY)
   if (request.method() !== 'GET') return json({ message: 'writes are not mocked' }, 400)
 
   const table = url.pathname.split('/').pop() ?? ''

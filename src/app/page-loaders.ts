@@ -7,6 +7,7 @@ export const pageLoaders = {
   '/focus': () => import('@/pages/FocusPage').then((m) => ({ Component: m.FocusPage })),
   '/team': () => import('@/pages/TeamPage').then((m) => ({ Component: m.TeamPage })),
   '/journey': () => import('@/pages/JourneyPage').then((m) => ({ Component: m.JourneyPage })),
+  '/history': () => import('@/pages/HistoryPage').then((m) => ({ Component: m.HistoryPage })),
   '/settings': () => import('@/pages/SettingsPage').then((m) => ({ Component: m.SettingsPage })),
 } as const
 

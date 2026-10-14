@@ -4,7 +4,7 @@ Aplicativo web pessoal de produtividade gamificado com jornada Pokémon. Veja `P
 
 ## Stack
 
-React + Vite + TypeScript (strict), Tailwind CSS, React Router, TanStack Query, Zustand, Zod, Motion, Supabase (Auth + PostgreSQL + RLS).
+React + Vite + TypeScript (strict), Tailwind CSS, React Router, TanStack Query, Zustand, Zod, Supabase (Auth + PostgreSQL + RLS).
 
 ## Requisitos
 

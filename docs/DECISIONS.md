@@ -432,3 +432,33 @@ Navegando dentro do app a partir do Dashboard: antes e depois, Tarefas, Foco, Jo
 **Limites da medição:** API simulada com atraso fixo e dados pequenos; não mede o Supabase real, rede móvel nem um celular de verdade (o item "comparar em celular real/throttling" do plano não foi feito). Não usei o profiler do React: com as listas limitadas (5 no Dashboard, 200 no histórico) não vi motivo para memoização.
 
 **Lição do próprio processo:** a primeira comparação antes/depois saiu idêntica porque o `vite preview` da execução anterior continuou vivo no Windows e serviu o build errado. O script passou a subir o preview dentro do próprio processo e fechá-lo no fim.
+
+## 2026-10-14 — Histórico (T-035): uma visão única no banco, totais calculados da mesma fonte
+
+**Decisão:** a página Histórico lê uma view, `history_entries`, que une tarefas concluídas, sessões de foco, batalhas vencidas, capturas, evoluções, insígnias e a escolha do inicial numa linha do tempo só (uma requisição por janela de datas). Os totais de hoje / 7 dias / 30 dias / total vêm da RPC `get_history_summary()`, que agrega **a mesma view** — os números e as entradas não têm como divergir.
+**Segurança:** a view é `security_invoker`, então o RLS de cada tabela de origem continua valendo; a RPC roda como o chamador. `anon` recebe 401 em ambas.
+**Sem streak:** dias sem atividade simplesmente não aparecem, não há contagem de sequência nem comparação com período anterior. "7 dias" e "30 dias" são janelas rolantes; "hoje" começa à meia-noite no fuso do perfil.
+**Filtro sem requisição:** o filtro por tipo é aplicado no cliente sobre a janela já carregada (30 dias, ampliável de 30 em 30). Só "Ver mais 30 dias" busca de novo.
+**Sempre atualizado em vez de invalidado:** o histórico é alimentado por meia dúzia de mutations espalhadas pelo app; em vez de ensinar cada uma a invalidá-lo, as duas consultas têm `staleTime: 0` e são refeitas ao abrir a página, mantendo os dados anteriores na tela.
+**Evoluções passaram a ser registradas:** `confirm_evolution` só reescrevia a linha do Pokémon; agora também grava em `evolution_events`. Evoluções anteriores a esta migration não aparecem no histórico (não havia registro).
+**Configurações:** o som ao terminar a sessão, que só existia como caixa na tela de Foco, ganhou uma caixa em Configurações, junto de timers, movimento reduzido e fuso.
+**Validado contra o banco real:** `supabase/verification/t035-history-and-retention.sql` — título/dificuldade gravados na conclusão, limpeza apagando só o que deve, ledger sobrevivendo à limpeza, total geral batendo com as quatro tabelas de origem (eventos, sessões, vitórias, XP), virada do dia no fuso do perfil (duas sessões a um minuto da meia-noite local, só uma conta como hoje) e permissões do papel `authenticated`. Tudo revertido.
+
+## 2026-10-14 — Tarefas concluídas e arquivadas são apagadas após 90 dias
+
+**Decisão (pedido do usuário):** a função `purge_old_tasks()` apaga tarefas concluídas há mais de 90 dias e arquivadas há mais de 90 dias, agendada pelo `pg_cron` todo dia às 03:17 UTC. Tarefas pendentes nunca são apagadas, por mais antigas que sejam.
+**O histórico não perde nada:** o registro de conclusão (`productivity_events`) passou a guardar título e dificuldade da tarefa no momento da conclusão, então o diário continua mostrando "Concluiu: …" depois que a tarefa some. Batalhas resolvidas e XP também ficam.
+**Restrição ajustada:** `battles` exigia que todo compromisso de tarefa tivesse `task_id`; como a coluna é `ON DELETE SET NULL`, apagar uma tarefa com batalha violaria a restrição. A nova (`battles_task_link_check`) aceita `task_id` nulo quando a batalha já está resolvida. Batalhas ainda pendentes de uma tarefa apagada são removidas junto, pois não poderiam mais ser resolvidas.
+**Consequência para o usuário:** uma tarefa concluída só pode ser reaberta dentro de 90 dias. As telas de Tarefas (abas Concluídas/Arquivadas) e de Histórico avisam do prazo.
+**O prazo vive em dois lugares:** o valor que vale é o padrão da função SQL; `TASK_RETENTION_DAYS` no cliente é só o texto exibido. Mudar um exige mudar o outro.
+**Limpeza nunca chamável pelo cliente:** a função apaga de todos os donos, então o `EXECUTE` foi revogado de `public`, `anon` e `authenticated`.
+
+## 2026-10-14 — Resíduo de scripts de verificação antigos removido do ledger real
+
+**O que aconteceu:** ao criar o histórico apareceram 6 registros de "tarefa concluída" sem tarefa e 3 recompensas de XP (140 XP) sem batalha. Eram sobras dos scripts de verificação do T-022, T-025 e T-026, que apagavam as tarefas e batalhas de teste mas não os registros derivados delas. Apareceriam no histórico do usuário como atividade que ele não fez.
+**Ação:** apagados exatamente esses 9 registros (órfãos e anteriores a 2026-10-14). O XP não tinha ido para nenhum Pokémon do usuário: os Pokémon de teste daqueles scripts já tinham sido removidos.
+**Pendência:** esses três scripts antigos continuam com a limpeza linha a linha e deixariam o mesmo resíduo se rodados de novo. Os scripts a partir do T-028 usam uma subtransação sempre revertida e não têm esse problema; os antigos deveriam ser convertidos antes de qualquer nova execução.
+
+## 2026-10-14 — Pacote `motion` removido
+
+**Decisão (confirmada pelo usuário):** depois do T-034 o pacote estava instalado sem uso; foi desinstalado. A animação da insígnia é CSS e a preferência de movimento reduzido usa um hook próprio.
